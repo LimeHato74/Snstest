@@ -4,16 +4,20 @@
     <meta charset="UTF-8">
     <script>
         // GitHub PagesのSPAリダイレクト処理
-        // URLのパスとハッシュを保持してindex.htmlにリダイレクト
         (function() {
-            var redirect = sessionStorage.getItem('redirect');
-            if (redirect) {
-                sessionStorage.removeItem('redirect');
-                window.location.replace(redirect);
+            var path = window.location.pathname;
+            var hash = window.location.hash;
+            
+            // /Snstest へのアクセスを /Snstest/ にリダイレクト
+            if (path === '/Snstest' || path.indexOf('/Snstest') === 0) {
+                // 末尾に / がない場合は追加
+                if (!path.endsWith('/')) {
+                    window.location.replace('/Snstest/' + hash);
+                } else {
+                    window.location.replace(path + hash);
+                }
             } else {
-                // 現在のURLをindex.htmlにリダイレクト（ハッシュを保持）
-                var path = window.location.pathname.slice(1);
-                var hash = window.location.hash;
+                // その他のパスはルートにリダイレクト
                 window.location.replace('/' + hash);
             }
         })();
