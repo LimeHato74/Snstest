@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PenGuin 🐧 - Write it cool.</title>
     
+    <!--
+    ■ リアルタイム機能について ■
+    このアプリは以下の機能でリアルタイム更新に対応しています：
+    - 新規投稿（他のユーザーの投稿が即座に表示）
+    - いいね・リポスト（カウントが即座に更新）
+    - コメント（新しいコメントが即座に表示）
+    
+    【重要】Supabaseのリアルタイム機能を有効にする必要があります：
+    1. Supabase Dashboard → Database → Replication
+    2. postsテーブル、likes、reposts、commentsテーブルのReplicationをONにする
+    3. コンソールに "subscription status: SUBSCRIBED" と表示されることを確認
+    
+    もし即時反映されない場合は、ブラウザのコンソールを開いて
+    エラーメッセージやsubscription statusを確認してください。
+    -->
+    
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -721,6 +737,11 @@
             const content = document.getElementById('tweetInput').value.trim();
             if (!content || content.length > 280) return;
 
+            // 入力欄をクリア（即座にフィードバック）
+            document.getElementById('tweetInput').value = '';
+            document.getElementById('charCounter').textContent = '0 / 280';
+            document.getElementById('postBtn').disabled = true;
+
             const { data, error } = await supabaseClient
                 .from('posts')
                 .insert([{
@@ -732,12 +753,16 @@
 
             if (error) {
                 showToast('投稿に失敗しました', 'error');
+                console.error('Post error:', error);
                 return;
             }
 
-            document.getElementById('tweetInput').value = '';
-            document.getElementById('charCounter').textContent = '0 / 280';
-            document.getElementById('postBtn').disabled = true;
+            // 成功時はリアルタイム購読で自動的に追加される
+            // または手動で追加することもできる
+            if (data && data[0]) {
+                addPostToDOM(data[0], true);
+            }
+            
             showToast('投稿しました！', 'success');
         }
 
@@ -819,8 +844,10 @@
         }
 
         function subscribeToLikes() {
-            supabaseClient.channel('public:likes')
+            supabaseClient
+                .channel('likes-changes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, payload => {
+                    console.log('いいねを受信:', payload.new);
                     const like = payload.new;
                     if (!likesData[like.post_id]) {
                         likesData[like.post_id] = { count: 0, users: [] };
@@ -832,6 +859,7 @@
                     }
                 })
                 .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'likes' }, payload => {
+                    console.log('いいね削除:', payload.old);
                     const like = payload.old;
                     if (likesData[like.post_id]) {
                         likesData[like.post_id].count--;
@@ -839,12 +867,16 @@
                         updateLikeButton(like.post_id);
                     }
                 })
-                .subscribe();
+                .subscribe((status) => {
+                    console.log('Likes subscription status:', status);
+                });
         }
 
         function subscribeToReposts() {
-            supabaseClient.channel('public:reposts')
+            supabaseClient
+                .channel('reposts-changes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reposts' }, payload => {
+                    console.log('リポストを受信:', payload.new);
                     const repost = payload.new;
                     if (!repostsData[repost.post_id]) {
                         repostsData[repost.post_id] = { count: 0, users: [] };
@@ -856,6 +888,7 @@
                     }
                 })
                 .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'reposts' }, payload => {
+                    console.log('リポスト削除:', payload.old);
                     const repost = payload.old;
                     if (repostsData[repost.post_id]) {
                         repostsData[repost.post_id].count--;
@@ -863,7 +896,9 @@
                         updateRepostButton(repost.post_id);
                     }
                 })
-                .subscribe();
+                .subscribe((status) => {
+                    console.log('Reposts subscription status:', status);
+                });
         }
 
         async function toggleLike(postId) {
@@ -1066,8 +1101,10 @@
         function subscribeToComments() {
             if (commentSubscription) return;
 
-            commentSubscription = supabaseClient.channel('public:comments')
+            commentSubscription = supabaseClient
+                .channel('comments-changes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
+                    console.log('コメントを受信:', payload.new);
                     const comment = payload.new;
                     if (!commentsData[comment.post_id]) {
                         commentsData[comment.post_id] = [];
@@ -1083,6 +1120,7 @@
                     }
                 })
                 .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'comments' }, payload => {
+                    console.log('コメント削除:', payload.old);
                     const comment = payload.old;
                     if (commentsData[comment.post_id]) {
                         commentsData[comment.post_id] = commentsData[comment.post_id].filter(c => c.id !== comment.id);
@@ -1091,7 +1129,9 @@
                     renderComments(comment.post_id);
                     updateCommentCount(comment.post_id);
                 })
-                .subscribe();
+                .subscribe((status) => {
+                    console.log('Comments subscription status:', status);
+                });
         }
 
         async function fetchPosts() {
@@ -1120,11 +1160,30 @@
         function subscribeToPosts() {
             if (postSubscription) return;
 
-            postSubscription = supabaseClient.channel('public:posts')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, payload => {
+            postSubscription = supabaseClient
+                .channel('posts-changes')
+                .on('postgres_changes', { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'posts' 
+                }, payload => {
+                    console.log('新しい投稿を受信:', payload.new);
                     addPostToDOM(payload.new, true);
                 })
-                .subscribe();
+                .on('postgres_changes', { 
+                    event: 'DELETE', 
+                    schema: 'public', 
+                    table: 'posts' 
+                }, payload => {
+                    console.log('投稿が削除されました:', payload.old);
+                    const postElement = document.getElementById(`post-${payload.old.id}`);
+                    if (postElement) {
+                        postElement.remove();
+                    }
+                })
+                .subscribe((status) => {
+                    console.log('Posts subscription status:', status);
+                });
         }
 
         function addPostToDOM(post, prepend = false) {
