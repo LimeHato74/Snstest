@@ -267,7 +267,7 @@
         @media (max-width: 768px) {
             .app-container { grid-template-columns: 1fr; display: block; }
             .sidebar { 
-                display: none; /* Hide sidebar on mobile, use bottom nav ideally, but simplifying */
+                display: none; 
             }
             .sidebar.mobile-active {
                 display: flex; position: fixed; top: 0; left: 0; width: 80%; height: 100%; z-index: 100; box-shadow: 10px 0 20px rgba(0,0,0,0.1);
@@ -356,12 +356,15 @@
 
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentUser = null;
+        let postSubscription = null; // 購読管理用変数
 
         // --- Init ---
         async function init() {
             const { data: { session } } = await supabaseClient.auth.getSession();
+            // 初期ロード時のセッション処理
             handleSession(session);
 
+            // 認証状態の変更監視
             supabaseClient.auth.onAuthStateChange((_event, session) => {
                 handleSession(session);
             });
@@ -369,6 +372,9 @@
 
         function handleSession(session) {
             if (session) {
+                // すでにログイン済みで、ユーザーが変わっていない場合はリロードを防ぐ（簡易チェック）
+                if(currentUser && currentUser.id === session.user.id) return;
+
                 currentUser = session.user;
                 document.getElementById('login-overlay').classList.add('hidden');
                 document.getElementById('app-screen').classList.remove('hidden');
@@ -381,6 +387,11 @@
                 subscribeToPosts();
             } else {
                 currentUser = null;
+                // ログアウト時は購読解除
+                if (postSubscription) {
+                    supabaseClient.removeChannel(postSubscription);
+                    postSubscription = null;
+                }
                 document.getElementById('login-overlay').classList.remove('hidden');
                 document.getElementById('app-screen').classList.add('hidden');
             }
@@ -398,15 +409,13 @@
 
             showToast("処理中...", "info");
 
-            // 1. Try Login
             const { error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
             
             if (signInError) {
-                // 2. If Login fails, Try Signup
                 const { error: signUpError } = await supabaseClient.auth.signUp({ 
                     email, 
                     password,
-                    options: { emailRedirectTo: window.location.href } // Auto detect current URL
+                    options: { emailRedirectTo: window.location.href }
                 });
 
                 if (signUpError) {
@@ -422,6 +431,7 @@
         async function handleLogout() {
             await supabaseClient.auth.signOut();
             showToast("ログアウトしました", "info");
+            // handleSession(null) will be called by onAuthStateChange
         }
 
         // --- Posting Logic ---
@@ -434,9 +444,10 @@
             btn.disabled = true;
             btn.textContent = "Pen...";
 
-            const { error } = await supabaseClient.from('posts').insert([
+            // .select() を追加して、作成したデータを即座に受け取る
+            const { data, error } = await supabaseClient.from('posts').insert([
                 { user_id: currentUser.id, email: currentUser.email, content: content }
-            ]);
+            ]).select();
 
             btn.disabled = false;
             btn.textContent = "Pen!";
@@ -446,7 +457,11 @@
             } else {
                 document.getElementById('post-content').value = "";
                 showToast("投稿しました！", "success");
-                // Note: Realtime subscription will handle adding it to the DOM
+                
+                // ★ ここで即時反映する
+                if (data && data.length > 0) {
+                    addPostToDOM(data[0], true);
+                }
             }
         }
 
@@ -457,20 +472,21 @@
                 .from('posts')
                 .delete()
                 .eq('id', postId)
-                .eq('user_id', currentUser.id); // Security check
+                .eq('user_id', currentUser.id);
 
             if (error) {
                 showToast("削除できませんでした: " + error.message, "error");
             } else {
                 showToast("削除しました", "info");
-                document.getElementById(`post-${postId}`).remove();
+                const el = document.getElementById(`post-${postId}`);
+                if(el) el.remove();
             }
         }
 
         // --- Feed Logic ---
         async function fetchPosts() {
             const timeline = document.getElementById('timeline');
-            timeline.innerHTML = ''; // Clear loading
+            timeline.innerHTML = ''; 
 
             const { data, error } = await supabaseClient
                 .from('posts')
@@ -483,7 +499,7 @@
                 return;
             }
 
-            if (data.length === 0) {
+            if (!data || data.length === 0) {
                 timeline.innerHTML = '<p style="text-align:center; padding:20px;">まだ投稿がありません。一番乗りしよう！</p>';
                 return;
             }
@@ -492,8 +508,12 @@
         }
 
         function subscribeToPosts() {
-            supabaseClient.channel('public:posts')
+            // すでに購読中なら重複登録しない
+            if (postSubscription) return;
+
+            postSubscription = supabaseClient.channel('public:posts')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, payload => {
+                    // リアルタイム通知が来たときも追加を試みる（addPostToDOM内の重複チェックでガードされる）
                     addPostToDOM(payload.new, true);
                 })
                 .subscribe();
@@ -502,13 +522,24 @@
         // --- UI Rendering ---
         function addPostToDOM(post, prepend = false) {
             const timeline = document.getElementById('timeline');
+            
+            // ★ 重複チェック：すでに同じIDの投稿がDOMにあれば追加しない
+            if (document.getElementById(`post-${post.id}`)) {
+                return;
+            }
+
+            // 初回ロード時の「読み込み中...」などを消す処理
+            if (timeline.children.length === 1 && timeline.children[0].tagName === 'P') {
+                timeline.innerHTML = '';
+            }
+
             const avatarUrl = getAvatarUrl(post.email);
             const timeAgo = timeSince(new Date(post.created_at));
             const isMine = currentUser && currentUser.id === post.user_id;
 
             const div = document.createElement('div');
             div.className = 'post';
-            div.id = `post-${post.id}`; // For deletion
+            div.id = `post-${post.id}`; // 削除や重複チェックで使用
             
             div.innerHTML = `
                 <img src="${avatarUrl}" class="avatar" alt="User">
@@ -538,9 +569,7 @@
         }
 
         // --- Helpers ---
-        // DiceBear API for Avatars
         function getAvatarUrl(seed) {
-            // Using 'avataaars' style for a fun look
             return `https://api.dicebear.com/9.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4`;
         }
 
@@ -551,7 +580,6 @@
             });
         }
         
-        // Simple Linkify
         function linkify(text) {
              var urlRegex = /(https?:\/\/[^\s]+)/g;
              return text.replace(urlRegex, function(url) {
@@ -559,7 +587,6 @@
              });
         }
 
-        // Toast Notification
         function showToast(msg, type = "info") {
             const colors = {
                 info: "#00A8E8",
@@ -576,7 +603,6 @@
             }).showToast();
         }
 
-        // Relative Time (e.g., "5m ago")
         function timeSince(date) {
             const seconds = Math.floor((new Date() - date) / 1000);
             let interval = seconds / 31536000;
