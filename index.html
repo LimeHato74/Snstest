@@ -636,6 +636,30 @@
             const accessToken = hashParams.get('access_token');
             const refreshToken = hashParams.get('refresh_token');
             const type = hashParams.get('type');
+            const error = hashParams.get('error');
+            const errorCode = hashParams.get('error_code');
+            const errorDescription = hashParams.get('error_description');
+            
+            // エラーがある場合の処理
+            if (error) {
+                console.error('❌ 認証エラー:', error, errorCode, errorDescription);
+                document.getElementById('loading').classList.remove('show');
+                
+                let errorMessage = '認証エラーが発生しました';
+                if (errorCode === 'otp_expired') {
+                    errorMessage = 'メール認証リンクの有効期限が切れています。もう一度サインアップしてください。';
+                } else if (error === 'access_denied') {
+                    errorMessage = 'アクセスが拒否されました。もう一度お試しください。';
+                }
+                
+                showToast(errorMessage, 'error');
+                
+                // URLをクリーンアップ
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                document.getElementById('authModal').classList.add('show');
+                return;
+            }
             
             // メール認証からのリダイレクトの場合
             if (accessToken && type === 'signup') {
