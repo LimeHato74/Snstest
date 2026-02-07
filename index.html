@@ -312,14 +312,50 @@
             flex: 1;
         }
         
+        .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 2px;
+        }
+        
         .comment-author {
             font-weight: 700;
             font-size: 0.9rem;
         }
         
+        .comment-time {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        
         .comment-text {
             font-size: 0.9rem;
             margin-top: 2px;
+        }
+        
+        .comments-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        .comments-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .comments-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .comments-list::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+        
+        .comments-list::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
         }
         
         .comment-delete {
@@ -410,6 +446,19 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.3); }
         }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateX(-20px);
+                background: rgba(0, 168, 232, 0.1);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0);
+                background: transparent;
+            }
+        }
     </style>
 </head>
 <body>
@@ -475,7 +524,7 @@
 
     <script>
         // Cloudflare WorkerのURL（デプロイ後に更新してください）
-        const CONFIG_WORKER_URL = 'https://shrill-block-fafd.boleft704.workers.dev';
+        const CONFIG_WORKER_URL = 'https://shrill-block-fafd.boleft704.workers.dev/';
         
         // Supabaseクライアント用の変数
         let supabaseClient;
@@ -884,12 +933,24 @@
             const commentsSection = document.querySelector(`#post-${postId} .comments-section`);
             if (!commentsSection) return;
 
+            const wasActive = commentsSection.classList.contains('active');
             commentsSection.classList.toggle('active');
             
-            if (commentsSection.classList.contains('active')) {
+            if (!wasActive) {
+                // コメントを開いたとき
                 renderComments(postId);
                 const input = commentsSection.querySelector('.comment-input');
-                if (input) input.focus();
+                if (input) {
+                    // 少し遅延させてからフォーカス（アニメーション後）
+                    setTimeout(() => {
+                        input.focus();
+                        // コメントリストの最下部にスクロール
+                        const commentsList = commentsSection.querySelector('.comments-list');
+                        if (commentsList) {
+                            commentsList.scrollTop = commentsList.scrollHeight;
+                        }
+                    }, 100);
+                }
             }
         }
 
@@ -898,6 +959,8 @@
             if (!container) return;
 
             const comments = commentsData[postId] || [];
+            const previousScrollHeight = container.scrollHeight;
+            const wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 10;
             
             if (comments.length === 0) {
                 container.innerHTML = '<p style="text-align:center; color:var(--text-light); font-size:0.9rem; padding:10px;">まだコメントがありません</p>';
@@ -906,17 +969,28 @@
 
             container.innerHTML = comments.map(comment => {
                 const isMine = currentUser.id === comment.user_id;
+                const timeAgo = timeSince(new Date(comment.created_at));
                 return `
                     <div class="comment-item">
                         <img src="${getAvatarUrl(comment.email)}" class="comment-avatar" alt="User">
                         <div class="comment-content">
-                            <div class="comment-author">${sanitize(comment.email.split('@')[0])}</div>
+                            <div class="comment-header">
+                                <span class="comment-author">${sanitize(comment.email.split('@')[0])}</span>
+                                <span class="comment-time">· ${timeAgo}</span>
+                            </div>
                             <div class="comment-text">${sanitize(comment.content)}</div>
                         </div>
                         ${isMine ? `<span class="comment-delete" onclick="deleteComment('${comment.id}', '${postId}')"><i class="fa-solid fa-trash"></i></span>` : ''}
                     </div>
                 `;
             }).join('');
+            
+            // 新しいコメントが追加された場合、自動的に最下部にスクロール
+            if (wasAtBottom || container.scrollHeight > previousScrollHeight) {
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 50);
+            }
         }
 
         async function submitComment(postId) {
@@ -929,6 +1003,7 @@
             if (!content) return;
 
             btn.disabled = true;
+            btn.textContent = '送信中...';
 
             const { error } = await supabaseClient
                 .from('comments')
@@ -940,11 +1015,14 @@
                 }]);
 
             btn.disabled = false;
+            btn.textContent = '送信';
 
             if (error) {
                 showToast("コメント失敗: " + error.message, "error");
             } else {
                 input.value = '';
+                // リアルタイムサブスクリプションが自動的にUIを更新するため、
+                // ここでは何もしない（トーストのみ表示）
                 showToast("コメントしました！", "success");
             }
         }
@@ -980,17 +1058,34 @@
             if (commentSubscription) return;
 
             commentSubscription = supabaseClient.channel('public:comments')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, payload => {
-                    fetchComments().then(() => {
-                        if (payload.new && payload.new.post_id) {
-                            renderComments(payload.new.post_id);
-                            updateCommentCount(payload.new.post_id);
-                        }
-                        if (payload.old && payload.old.post_id) {
-                            renderComments(payload.old.post_id);
-                            updateCommentCount(payload.old.post_id);
-                        }
-                    });
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
+                    // 新しいコメントが追加されたとき - 即座に反映
+                    const comment = payload.new;
+                    if (!commentsData[comment.post_id]) {
+                        commentsData[comment.post_id] = [];
+                    }
+                    commentsData[comment.post_id].push(comment);
+                    
+                    // UIを即座に更新
+                    renderComments(comment.post_id);
+                    updateCommentCount(comment.post_id);
+                    
+                    // アニメーション効果を追加
+                    const commentsList = document.querySelector(`#post-${comment.post_id} .comments-list`);
+                    if (commentsList && commentsList.lastElementChild) {
+                        commentsList.lastElementChild.style.animation = 'slideIn 0.3s ease';
+                    }
+                })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'comments' }, payload => {
+                    // コメントが削除されたとき
+                    const comment = payload.old;
+                    if (commentsData[comment.post_id]) {
+                        commentsData[comment.post_id] = commentsData[comment.post_id].filter(c => c.id !== comment.id);
+                    }
+                    
+                    // UIを即座に更新
+                    renderComments(comment.post_id);
+                    updateCommentCount(comment.post_id);
                 })
                 .subscribe();
         }
