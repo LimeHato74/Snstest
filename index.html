@@ -15,17 +15,19 @@
 
     <style>
         :root {
-            --primary: #00A8E8;       /* Penguin Blue */
+            --primary: #00A8E8;
             --primary-dark: #007EA7;
-            --secondary: #003459;     /* Deep Ocean */
-            --accent: #FFD400;        /* Beak Yellow */
-            --bg: #F0F4F8;            /* Ice White */
+            --secondary: #003459;
+            --accent: #FFD400;
+            --bg: #F0F4F8;
             --white: #ffffff;
             --text: #333333;
             --text-light: #666666;
             --border: #e1e8ed;
             --radius: 16px;
             --shadow: 0 4px 12px rgba(0, 52, 89, 0.05);
+            --like-color: #e0245e;
+            --repost-color: #17bf63;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,19 +38,17 @@
             color: var(--text);
             line-height: 1.6;
             height: 100vh;
-            overflow: hidden; /* App-like feel */
+            overflow: hidden;
         }
 
-        /* --- Layout --- */
         .app-container {
             display: grid;
-            grid-template-columns: 280px 1fr 300px; /* Sidebar | Main | Widgets */
+            grid-template-columns: 280px 1fr 300px;
             max-width: 1200px;
             margin: 0 auto;
             height: 100%;
         }
 
-        /* --- Sidebar (Left) --- */
         .sidebar {
             padding: 2rem;
             display: flex;
@@ -95,7 +95,6 @@
         }
         .btn-tweet:hover { background-color: var(--primary-dark); transform: translateY(-2px); }
 
-        /* --- Main Feed (Center) --- */
         .main-feed {
             overflow-y: auto;
             border-right: 1px solid var(--border);
@@ -150,20 +149,19 @@
         .compose-actions {
             display: flex;
             justify-content: flex-end;
-            align-items: center; /* 中央揃え */
+            align-items: center;
             margin-top: 0.5rem;
-            gap: 15px; /* カウンターとボタンの間隔 */
+            gap: 15px;
         }
 
-        /* 文字数カウンターのスタイル */
         .char-counter {
             font-size: 0.85rem;
             color: var(--text-light);
             font-weight: 700;
             transition: color 0.2s;
         }
-        .char-counter.limit-near { color: #f39c12; } /* 警告色 */
-        .char-counter.limit-over { color: #e74c3c; } /* エラー色 */
+        .char-counter.limit-near { color: #f39c12; }
+        .char-counter.limit-over { color: #e74c3c; }
 
         .btn-sm {
             padding: 8px 20px;
@@ -177,7 +175,6 @@
         }
         .btn-sm:disabled { background: #ccc; cursor: not-allowed; opacity: 0.7; }
 
-        /* --- Posts --- */
         .post {
             padding: 1rem;
             border-bottom: 1px solid var(--border);
@@ -207,11 +204,134 @@
             color: var(--text-light);
             font-size: 0.9rem;
         }
-        .action-item { cursor: pointer; transition: color 0.2s; }
+        
+        .action-item {
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
         .action-item:hover { color: var(--primary); }
         .action-item.delete:hover { color: #e0245e; }
+        
+        /* いいね関連 */
+        .action-item.liked {
+            color: var(--like-color);
+        }
+        .action-item.liked i {
+            animation: heartBeat 0.3s ease;
+        }
+        
+        /* リポスト関連 */
+        .action-item.reposted {
+            color: var(--repost-color);
+        }
+        
+        .repost-indicator {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .repost-indicator i {
+            color: var(--repost-color);
+        }
 
-        /* --- Login Screen --- */
+        /* コメントセクション */
+        .comments-section {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+        
+        .comments-section.active {
+            display: block;
+        }
+        
+        .comment-input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .comment-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        
+        .comment-input:focus {
+            border-color: var(--primary);
+        }
+        
+        .comment-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .comment-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        .comment-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .comment-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+        
+        .comment-content {
+            flex: 1;
+        }
+        
+        .comment-author {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        
+        .comment-text {
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+        
+        .comment-delete {
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        
+        .comment-delete:hover {
+            color: #e0245e;
+        }
+
         #login-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -228,217 +348,203 @@
             border-radius: 24px;
             box-shadow: 0 10px 40px rgba(0, 52, 89, 0.15);
             text-align: center;
-            width: 90%;
             max-width: 400px;
+            width: 90%;
         }
 
-        .login-card h1 { color: var(--secondary); margin-bottom: 0.5rem; }
-        .login-card p { color: var(--text-light); margin-bottom: 2rem; font-size: 0.9rem; }
+        .login-card h1 {
+            font-size: 2.5rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+        .login-card h1 i { color: var(--primary); }
 
-        .input-group { margin-bottom: 1rem; text-align: left; }
+        .login-card p {
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
         .input-group input {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #eee;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
             border-radius: 12px;
             font-size: 1rem;
-            transition: 0.2s;
-            outline: none;
+            transition: border 0.2s;
         }
-        .input-group input:focus { border-color: var(--primary); }
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
 
-        .btn-full {
+        .btn-primary {
             width: 100%;
             padding: 14px;
-            background: var(--secondary);
+            background: var(--primary);
             color: white;
             border: none;
             border-radius: 12px;
+            font-size: 1.1rem;
             font-weight: 700;
-            font-size: 1rem;
             cursor: pointer;
-            margin-top: 1rem;
+            transition: 0.2s;
         }
-        .btn-full:hover { opacity: 0.9; }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
 
-        /* --- Utility & Mobile --- */
         .hidden { display: none !important; }
-        
-        .skeleton {
-            height: 12px;
-            background: #eee;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            animation: pulse 1.5s infinite;
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .app-container { grid-template-columns: 1fr; display: block; }
-            .sidebar { 
-                display: none; 
-            }
-            .sidebar.mobile-active {
-                display: flex; position: fixed; top: 0; left: 0; width: 80%; height: 100%; z-index: 100; box-shadow: 10px 0 20px rgba(0,0,0,0.1);
-            }
-            #widgets { display: none; }
-            .header { display: flex; justify-content: space-between; align-items: center; }
+        
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
         }
     </style>
 </head>
 <body>
-
+    <!-- Login Screen -->
     <div id="login-overlay">
         <div class="login-card">
-            <div style="font-size: 3rem; margin-bottom: 10px;">🐧</div>
-            <h1>PenGuin</h1>
-            <p>Write it cool. ペンギンのようにクールに。</p>
-            
+            <h1><i class="fa-solid fa-fish"></i> PenGuin</h1>
+            <p>Write it cool. 🐧</p>
             <div class="input-group">
                 <input type="email" id="email" placeholder="メールアドレス">
             </div>
             <div class="input-group">
-                <input type="password" id="password" placeholder="パスワード（6文字以上）">
+                <input type="password" id="password" placeholder="パスワード">
             </div>
-            
-            <button class="btn-full" onclick="handleAuth()">ログイン / 新規登録</button>
-            <p style="margin-top: 15px; font-size: 0.8rem; color: #888;">初回は自動的に登録されます</p>
+            <button class="btn-primary" onclick="handleAuth()">ログイン / サインアップ</button>
         </div>
     </div>
 
-    <div id="app-screen" class="app-container hidden">
-        
-        <aside class="sidebar" id="sidebar">
-            <a href="#" class="brand">
-                <i class="fa-solid fa-pen-nib"></i> PenGuin
-            </a>
-            
-            <nav>
-                <div class="nav-btn active"><i class="fa-solid fa-house"></i> ホーム</div>
-                <div class="nav-btn"><i class="fa-solid fa-bell"></i> 通知</div>
-                <div class="nav-btn"><i class="fa-solid fa-user"></i> プロフィール</div>
-                <div class="nav-btn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</div>
-            </nav>
+    <!-- Main App -->
+    <div id="app-screen" class="hidden">
+        <div class="app-container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <a href="#" class="brand">
+                    <i class="fa-solid fa-fish"></i> PenGuin
+                </a>
+                <a href="#" class="nav-btn active">
+                    <i class="fa-solid fa-house"></i> ホーム
+                </a>
+                <a href="#" class="nav-btn">
+                    <i class="fa-solid fa-user"></i> プロフィール
+                </a>
+                <a href="#" class="nav-btn" onclick="handleLogout()">
+                    <i class="fa-solid fa-right-from-bracket"></i> ログアウト
+                </a>
+                <button class="nav-btn btn-tweet" onclick="document.getElementById('post-content').focus()">
+                    Pen!
+                </button>
+            </aside>
 
-            <div class="btn-tweet nav-btn" onclick="document.getElementById('post-content').focus()">
-                <i class="fa-solid fa-feather-pointed"></i> 投稿する
-            </div>
-        </aside>
+            <!-- Main Feed -->
+            <main class="main-feed">
+                <div class="header">ホーム</div>
 
-        <main class="main-feed">
-            <div class="header">
-                <span>ホーム</span>
-                <i class="fa-solid fa-bars" style="float: right; cursor: pointer; display: none;" onclick="toggleSidebar()"></i>
-            </div>
-
-            <div class="compose-box">
-                <img src="" id="my-avatar" class="avatar" alt="Me">
-                <div class="compose-area">
-                    <textarea id="post-content" placeholder="今どうしてる？（ペンギン語でどうぞ）"></textarea>
-                    <div class="compose-actions">
-                        <span id="char-count" class="char-counter">0/140</span>
-                        <button class="btn-sm" onclick="submitPost()" id="post-btn" disabled>Pen!</button>
+                <div class="compose-box">
+                    <img id="user-avatar" src="" class="avatar" alt="You">
+                    <div class="compose-area">
+                        <textarea id="post-content" placeholder="今どうしてる？" maxlength="140"></textarea>
+                        <div class="compose-actions">
+                            <span id="char-count" class="char-counter">0/140</span>
+                            <button id="post-btn" class="btn-sm" onclick="submitPost()" disabled>Pen!</button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="timeline">
-                <div style="padding: 2rem; text-align: center; color: #888;">読み込み中... 🐧</div>
-            </div>
-        </main>
+                <div id="timeline"></div>
+            </main>
 
-        <aside id="widgets" style="padding: 2rem;">
-            <div style="background: #F7F9F9; border-radius: 16px; padding: 1rem;">
-                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">トレンド 🐧</h3>
-                <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">#南極の天気</p>
-                <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">#魚定食</p>
-                <p style="font-size: 0.9rem; color: #666;">#氷の上で滑らない方法</p>
-            </div>
-        </aside>
-
+            <!-- Right Sidebar (Empty for now) -->
+            <aside style="padding: 1rem; background: var(--bg);"></aside>
+        </div>
     </div>
 
     <script>
-        // ▼▼▼ Config ▼▼▼
-        const SUPABASE_URL = 'https://fieflcvbmzysidxpnqbo.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpZWZsY3ZibXp5c2lkeHBucWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NDEyNzQsImV4cCI6MjA4NjAxNzI3NH0.qlsYHqlFHxLknLNb8cAO4aqRamjkwOBLhx74BGSD8Us';
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲
-
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
         let currentUser = null;
         let postSubscription = null;
+        let likeSubscription = null;
+        let repostSubscription = null;
+        let commentSubscription = null;
 
-        // --- Init ---
         async function init() {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            handleSession(session);
+            
+            if (session) {
+                currentUser = session.user;
+                showApp();
+                await Promise.all([
+                    fetchPosts(),
+                    fetchLikes(),
+                    fetchReposts(),
+                    fetchComments()
+                ]);
+                subscribeToPosts();
+                subscribeToLikes();
+                subscribeToReposts();
+                subscribeToComments();
+            } else {
+                showLogin();
+            }
 
             supabaseClient.auth.onAuthStateChange((_event, session) => {
-                handleSession(session);
+                if (session) {
+                    currentUser = session.user;
+                    showApp();
+                    fetchPosts();
+                    fetchLikes();
+                    fetchReposts();
+                    fetchComments();
+                } else {
+                    showLogin();
+                }
             });
 
-            // 文字数カウントのイベントリスナーを設定
-            setupCharacterCounter();
-        }
+            const textarea = document.getElementById('post-content');
+            const charCount = document.getElementById('char-count');
+            const postBtn = document.getElementById('post-btn');
 
-        // ▼ 文字数カウントとボタン制御のロジック
-        function setupCharacterCounter() {
-            const input = document.getElementById('post-content');
-            const counter = document.getElementById('char-count');
-            const btn = document.getElementById('post-btn');
-            const LIMIT = 140;
-
-            input.addEventListener('input', () => {
-                const len = input.value.length;
-                counter.textContent = `${len}/${LIMIT}`;
-
-                // スタイルのリセット
-                counter.classList.remove('limit-near', 'limit-over');
-                btn.disabled = false;
-
-                if (len === 0) {
-                    // 空の場合は無効
-                    btn.disabled = true;
-                } else if (len > LIMIT) {
-                    // 制限オーバー
-                    counter.classList.add('limit-over');
-                    btn.disabled = true; // 投稿不可
-                } else if (len >= LIMIT - 10) {
-                    // 制限間近（残り10文字）
-                    counter.classList.add('limit-near');
-                }
+            textarea.addEventListener('input', () => {
+                const length = textarea.value.length;
+                charCount.textContent = `${length}/140`;
+                
+                charCount.className = 'char-counter';
+                if (length > 130) charCount.classList.add('limit-near');
+                if (length > 140) charCount.classList.add('limit-over');
+                
+                postBtn.disabled = length === 0 || length > 140;
             });
         }
 
-        function handleSession(session) {
-            if (session) {
-                if(currentUser && currentUser.id === session.user.id) return;
-
-                currentUser = session.user;
-                document.getElementById('login-overlay').classList.add('hidden');
-                document.getElementById('app-screen').classList.remove('hidden');
-                
-                // Set Avatar
-                const avatarUrl = getAvatarUrl(currentUser.email);
-                document.getElementById('my-avatar').src = avatarUrl;
-                
-                fetchPosts();
-                subscribeToPosts();
-            } else {
-                currentUser = null;
-                if (postSubscription) {
-                    supabaseClient.removeChannel(postSubscription);
-                    postSubscription = null;
-                }
-                document.getElementById('login-overlay').classList.remove('hidden');
-                document.getElementById('app-screen').classList.add('hidden');
-            }
+        function showApp() {
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('user-avatar').src = getAvatarUrl(currentUser.email);
         }
 
-        // --- Auth Logic ---
+        function showLogin() {
+            document.getElementById('login-overlay').classList.remove('hidden');
+            document.getElementById('app-screen').classList.add('hidden');
+        }
+
         async function handleAuth() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -474,12 +580,10 @@
             showToast("ログアウトしました", "info");
         }
 
-        // --- Posting Logic ---
         async function submitPost() {
             const content = document.getElementById('post-content').value;
             const btn = document.getElementById('post-btn');
             
-            // 投稿時のバリデーション（空文字、または140文字超過をブロック）
             if (!content.trim() || content.length > 140) return;
 
             btn.disabled = true;
@@ -495,11 +599,10 @@
             if (error) {
                 showToast("投稿失敗: " + error.message, "error");
             } else {
-                // 入力欄とカウンターをリセット
                 document.getElementById('post-content').value = "";
                 document.getElementById('char-count').textContent = "0/140";
                 document.getElementById('char-count').className = "char-counter";
-                document.getElementById('post-btn').disabled = true; // 空になったので無効化
+                document.getElementById('post-btn').disabled = true;
 
                 showToast("投稿しました！", "success");
                 
@@ -527,7 +630,309 @@
             }
         }
 
-        // --- Feed Logic ---
+        // === いいね機能 ===
+        let likesData = {};
+
+        async function fetchLikes() {
+            const { data, error } = await supabaseClient
+                .from('likes')
+                .select('*');
+            
+            if (!error && data) {
+                likesData = {};
+                data.forEach(like => {
+                    if (!likesData[like.post_id]) {
+                        likesData[like.post_id] = { count: 0, users: [] };
+                    }
+                    likesData[like.post_id].count++;
+                    likesData[like.post_id].users.push(like.user_id);
+                });
+            }
+        }
+
+        async function toggleLike(postId) {
+            const likeInfo = likesData[postId] || { count: 0, users: [] };
+            const isLiked = likeInfo.users.includes(currentUser.id);
+
+            if (isLiked) {
+                const { error } = await supabaseClient
+                    .from('likes')
+                    .delete()
+                    .eq('post_id', postId)
+                    .eq('user_id', currentUser.id);
+
+                if (!error) {
+                    likesData[postId].count--;
+                    likesData[postId].users = likesData[postId].users.filter(id => id !== currentUser.id);
+                    updateLikeUI(postId);
+                }
+            } else {
+                const { error } = await supabaseClient
+                    .from('likes')
+                    .insert([{ post_id: postId, user_id: currentUser.id }]);
+
+                if (!error) {
+                    if (!likesData[postId]) {
+                        likesData[postId] = { count: 0, users: [] };
+                    }
+                    likesData[postId].count++;
+                    likesData[postId].users.push(currentUser.id);
+                    updateLikeUI(postId);
+                }
+            }
+        }
+
+        function updateLikeUI(postId) {
+            const likeBtn = document.querySelector(`#post-${postId} .like-btn`);
+            if (!likeBtn) return;
+
+            const likeInfo = likesData[postId] || { count: 0, users: [] };
+            const isLiked = likeInfo.users.includes(currentUser.id);
+
+            likeBtn.className = `action-item like-btn ${isLiked ? 'liked' : ''}`;
+            likeBtn.innerHTML = `
+                <i class="fa${isLiked ? '-solid' : '-regular'} fa-heart"></i>
+                ${likeInfo.count > 0 ? likeInfo.count : ''}
+            `;
+        }
+
+        function subscribeToLikes() {
+            if (likeSubscription) return;
+
+            likeSubscription = supabaseClient.channel('public:likes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, payload => {
+                    fetchLikes().then(() => {
+                        if (payload.new && payload.new.post_id) {
+                            updateLikeUI(payload.new.post_id);
+                        }
+                        if (payload.old && payload.old.post_id) {
+                            updateLikeUI(payload.old.post_id);
+                        }
+                    });
+                })
+                .subscribe();
+        }
+
+        // === リポスト機能 ===
+        let repostsData = {};
+
+        async function fetchReposts() {
+            const { data, error } = await supabaseClient
+                .from('reposts')
+                .select('*');
+            
+            if (!error && data) {
+                repostsData = {};
+                data.forEach(repost => {
+                    if (!repostsData[repost.post_id]) {
+                        repostsData[repost.post_id] = { count: 0, users: [] };
+                    }
+                    repostsData[repost.post_id].count++;
+                    repostsData[repost.post_id].users.push(repost.user_id);
+                });
+            }
+        }
+
+        async function toggleRepost(postId) {
+            const repostInfo = repostsData[postId] || { count: 0, users: [] };
+            const isReposted = repostInfo.users.includes(currentUser.id);
+
+            if (isReposted) {
+                const { error } = await supabaseClient
+                    .from('reposts')
+                    .delete()
+                    .eq('post_id', postId)
+                    .eq('user_id', currentUser.id);
+
+                if (!error) {
+                    repostsData[postId].count--;
+                    repostsData[postId].users = repostsData[postId].users.filter(id => id !== currentUser.id);
+                    updateRepostUI(postId);
+                    showToast("リポストを取り消しました", "info");
+                }
+            } else {
+                const { error } = await supabaseClient
+                    .from('reposts')
+                    .insert([{ post_id: postId, user_id: currentUser.id }]);
+
+                if (!error) {
+                    if (!repostsData[postId]) {
+                        repostsData[postId] = { count: 0, users: [] };
+                    }
+                    repostsData[postId].count++;
+                    repostsData[postId].users.push(currentUser.id);
+                    updateRepostUI(postId);
+                    showToast("リポストしました！", "success");
+                }
+            }
+        }
+
+        function updateRepostUI(postId) {
+            const repostBtn = document.querySelector(`#post-${postId} .repost-btn`);
+            if (!repostBtn) return;
+
+            const repostInfo = repostsData[postId] || { count: 0, users: [] };
+            const isReposted = repostInfo.users.includes(currentUser.id);
+
+            repostBtn.className = `action-item repost-btn ${isReposted ? 'reposted' : ''}`;
+            repostBtn.innerHTML = `
+                <i class="fa-solid fa-retweet"></i>
+                ${repostInfo.count > 0 ? repostInfo.count : ''}
+            `;
+        }
+
+        function subscribeToReposts() {
+            if (repostSubscription) return;
+
+            repostSubscription = supabaseClient.channel('public:reposts')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'reposts' }, payload => {
+                    fetchReposts().then(() => {
+                        if (payload.new && payload.new.post_id) {
+                            updateRepostUI(payload.new.post_id);
+                        }
+                        if (payload.old && payload.old.post_id) {
+                            updateRepostUI(payload.old.post_id);
+                        }
+                    });
+                })
+                .subscribe();
+        }
+
+        // === コメント機能 ===
+        let commentsData = {};
+
+        async function fetchComments() {
+            const { data, error } = await supabaseClient
+                .from('comments')
+                .select('*')
+                .order('created_at', { ascending: true });
+            
+            if (!error && data) {
+                commentsData = {};
+                data.forEach(comment => {
+                    if (!commentsData[comment.post_id]) {
+                        commentsData[comment.post_id] = [];
+                    }
+                    commentsData[comment.post_id].push(comment);
+                });
+            }
+        }
+
+        function toggleComments(postId) {
+            const commentsSection = document.querySelector(`#post-${postId} .comments-section`);
+            if (!commentsSection) return;
+
+            commentsSection.classList.toggle('active');
+            
+            if (commentsSection.classList.contains('active')) {
+                renderComments(postId);
+                const input = commentsSection.querySelector('.comment-input');
+                if (input) input.focus();
+            }
+        }
+
+        function renderComments(postId) {
+            const container = document.querySelector(`#post-${postId} .comments-list`);
+            if (!container) return;
+
+            const comments = commentsData[postId] || [];
+            
+            if (comments.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-light); font-size:0.9rem; padding:10px;">まだコメントがありません</p>';
+                return;
+            }
+
+            container.innerHTML = comments.map(comment => {
+                const isMine = currentUser.id === comment.user_id;
+                return `
+                    <div class="comment-item">
+                        <img src="${getAvatarUrl(comment.email)}" class="comment-avatar" alt="User">
+                        <div class="comment-content">
+                            <div class="comment-author">${sanitize(comment.email.split('@')[0])}</div>
+                            <div class="comment-text">${sanitize(comment.content)}</div>
+                        </div>
+                        ${isMine ? `<span class="comment-delete" onclick="deleteComment('${comment.id}', '${postId}')"><i class="fa-solid fa-trash"></i></span>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function submitComment(postId) {
+            const input = document.querySelector(`#post-${postId} .comment-input`);
+            const btn = document.querySelector(`#post-${postId} .comment-btn`);
+            
+            if (!input || !btn) return;
+            
+            const content = input.value.trim();
+            if (!content) return;
+
+            btn.disabled = true;
+
+            const { error } = await supabaseClient
+                .from('comments')
+                .insert([{
+                    post_id: postId,
+                    user_id: currentUser.id,
+                    email: currentUser.email,
+                    content: content
+                }]);
+
+            btn.disabled = false;
+
+            if (error) {
+                showToast("コメント失敗: " + error.message, "error");
+            } else {
+                input.value = '';
+                showToast("コメントしました！", "success");
+            }
+        }
+
+        async function deleteComment(commentId, postId) {
+            if (!confirm("このコメントを削除しますか？")) return;
+
+            const { error } = await supabaseClient
+                .from('comments')
+                .delete()
+                .eq('id', commentId)
+                .eq('user_id', currentUser.id);
+
+            if (error) {
+                showToast("削除できませんでした: " + error.message, "error");
+            } else {
+                showToast("削除しました", "info");
+            }
+        }
+
+        function updateCommentCount(postId) {
+            const commentBtn = document.querySelector(`#post-${postId} .comment-btn`);
+            if (!commentBtn) return;
+
+            const comments = commentsData[postId] || [];
+            commentBtn.innerHTML = `
+                <i class="fa-regular fa-comment"></i>
+                ${comments.length > 0 ? comments.length : ''}
+            `;
+        }
+
+        function subscribeToComments() {
+            if (commentSubscription) return;
+
+            commentSubscription = supabaseClient.channel('public:comments')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, payload => {
+                    fetchComments().then(() => {
+                        if (payload.new && payload.new.post_id) {
+                            renderComments(payload.new.post_id);
+                            updateCommentCount(payload.new.post_id);
+                        }
+                        if (payload.old && payload.old.post_id) {
+                            renderComments(payload.old.post_id);
+                            updateCommentCount(payload.old.post_id);
+                        }
+                    });
+                })
+                .subscribe();
+        }
+
         async function fetchPosts() {
             const timeline = document.getElementById('timeline');
             timeline.innerHTML = ''; 
@@ -561,7 +966,6 @@
                 .subscribe();
         }
 
-        // --- UI Rendering ---
         function addPostToDOM(post, prepend = false) {
             if (document.getElementById(`post-${post.id}`)) return;
 
@@ -574,8 +978,16 @@
             const timeAgo = timeSince(new Date(post.created_at));
             const isMine = currentUser && currentUser.id === post.user_id;
             
-            // 140文字制限になったため、折りたたみ機能は削除してシンプルに表示
             const contentHtml = linkify(sanitize(post.content));
+
+            // いいね・リポストの情報
+            const likeInfo = likesData[post.id] || { count: 0, users: [] };
+            const isLiked = likeInfo.users.includes(currentUser.id);
+            
+            const repostInfo = repostsData[post.id] || { count: 0, users: [] };
+            const isReposted = repostInfo.users.includes(currentUser.id);
+            
+            const comments = commentsData[post.id] || [];
 
             const div = document.createElement('div');
             div.className = 'post';
@@ -593,10 +1005,27 @@
                     <div class="post-text">${contentHtml}</div>
                     
                     <div class="post-actions">
-                        <span class="action-item"><i class="fa-regular fa-comment"></i></span>
-                        <span class="action-item"><i class="fa-solid fa-retweet"></i></span>
-                        <span class="action-item"><i class="fa-regular fa-heart"></i></span>
+                        <span class="action-item comment-btn" onclick="toggleComments('${post.id}')">
+                            <i class="fa-regular fa-comment"></i>
+                            ${comments.length > 0 ? comments.length : ''}
+                        </span>
+                        <span class="action-item repost-btn ${isReposted ? 'reposted' : ''}" onclick="toggleRepost('${post.id}')">
+                            <i class="fa-solid fa-retweet"></i>
+                            ${repostInfo.count > 0 ? repostInfo.count : ''}
+                        </span>
+                        <span class="action-item like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}')">
+                            <i class="fa${isLiked ? '-solid' : '-regular'} fa-heart"></i>
+                            ${likeInfo.count > 0 ? likeInfo.count : ''}
+                        </span>
                         ${isMine ? `<span class="action-item delete" onclick="deletePost('${post.id}')"><i class="fa-solid fa-trash"></i></span>` : ''}
+                    </div>
+                    
+                    <div class="comments-section">
+                        <div class="comment-input-area">
+                            <input type="text" class="comment-input" placeholder="コメントを入力..." maxlength="200">
+                            <button class="comment-btn" onclick="submitComment('${post.id}')">送信</button>
+                        </div>
+                        <div class="comments-list"></div>
                     </div>
                 </div>
             `;
@@ -606,9 +1035,19 @@
             } else {
                 timeline.appendChild(div);
             }
+            
+            // コメント入力のエンターキー対応
+            const commentInput = div.querySelector('.comment-input');
+            if (commentInput) {
+                commentInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        submitComment(post.id);
+                    }
+                });
+            }
         }
 
-        // --- Helpers ---
         function getAvatarUrl(seed) {
             return `https://api.dicebear.com/9.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4`;
         }
