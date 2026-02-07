@@ -150,8 +150,20 @@
         .compose-actions {
             display: flex;
             justify-content: flex-end;
+            align-items: center; /* 中央揃え */
             margin-top: 0.5rem;
+            gap: 15px; /* カウンターとボタンの間隔 */
         }
+
+        /* 文字数カウンターのスタイル */
+        .char-counter {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 700;
+            transition: color 0.2s;
+        }
+        .char-counter.limit-near { color: #f39c12; } /* 警告色 */
+        .char-counter.limit-over { color: #e74c3c; } /* エラー色 */
 
         .btn-sm {
             padding: 8px 20px;
@@ -163,7 +175,7 @@
             color: white;
             transition: 0.2s;
         }
-        .btn-sm:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-sm:disabled { background: #ccc; cursor: not-allowed; opacity: 0.7; }
 
         /* --- Posts --- */
         .post {
@@ -187,16 +199,6 @@
         .user-name { font-weight: 700; color: var(--text); }
         .post-time { font-size: 0.85rem; color: var(--text-light); }
         .post-text { white-space: pre-wrap; word-break: break-word; }
-
-        /* Read More Button Style */
-        .read-more-btn {
-            color: var(--primary);
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 0.9rem;
-            margin-left: 5px;
-        }
-        .read-more-btn:hover { text-decoration: underline; }
 
         .post-actions {
             margin-top: 10px;
@@ -337,7 +339,8 @@
                 <div class="compose-area">
                     <textarea id="post-content" placeholder="今どうしてる？（ペンギン語でどうぞ）"></textarea>
                     <div class="compose-actions">
-                        <button class="btn-sm" onclick="submitPost()" id="post-btn">Pen!</button>
+                        <span id="char-count" class="char-counter">0/140</span>
+                        <button class="btn-sm" onclick="submitPost()" id="post-btn" disabled>Pen!</button>
                     </div>
                 </div>
             </div>
@@ -375,6 +378,38 @@
 
             supabaseClient.auth.onAuthStateChange((_event, session) => {
                 handleSession(session);
+            });
+
+            // 文字数カウントのイベントリスナーを設定
+            setupCharacterCounter();
+        }
+
+        // ▼ 文字数カウントとボタン制御のロジック
+        function setupCharacterCounter() {
+            const input = document.getElementById('post-content');
+            const counter = document.getElementById('char-count');
+            const btn = document.getElementById('post-btn');
+            const LIMIT = 140;
+
+            input.addEventListener('input', () => {
+                const len = input.value.length;
+                counter.textContent = `${len}/${LIMIT}`;
+
+                // スタイルのリセット
+                counter.classList.remove('limit-near', 'limit-over');
+                btn.disabled = false;
+
+                if (len === 0) {
+                    // 空の場合は無効
+                    btn.disabled = true;
+                } else if (len > LIMIT) {
+                    // 制限オーバー
+                    counter.classList.add('limit-over');
+                    btn.disabled = true; // 投稿不可
+                } else if (len >= LIMIT - 10) {
+                    // 制限間近（残り10文字）
+                    counter.classList.add('limit-near');
+                }
             });
         }
 
@@ -444,12 +479,12 @@
             const content = document.getElementById('post-content').value;
             const btn = document.getElementById('post-btn');
             
-            if (!content.trim()) return;
+            // 投稿時のバリデーション（空文字、または140文字超過をブロック）
+            if (!content.trim() || content.length > 140) return;
 
             btn.disabled = true;
             btn.textContent = "Pen...";
 
-            // .select() to get data immediately
             const { data, error } = await supabaseClient.from('posts').insert([
                 { user_id: currentUser.id, email: currentUser.email, content: content }
             ]).select();
@@ -460,7 +495,12 @@
             if (error) {
                 showToast("投稿失敗: " + error.message, "error");
             } else {
+                // 入力欄とカウンターをリセット
                 document.getElementById('post-content').value = "";
+                document.getElementById('char-count').textContent = "0/140";
+                document.getElementById('char-count').className = "char-counter";
+                document.getElementById('post-btn').disabled = true; // 空になったので無効化
+
                 showToast("投稿しました！", "success");
                 
                 if (data && data.length > 0) {
@@ -521,9 +561,9 @@
                 .subscribe();
         }
 
-        // --- UI Rendering (Read More Update) ---
+        // --- UI Rendering ---
         function addPostToDOM(post, prepend = false) {
-            if (document.getElementById(`post-${post.id}`)) return; // Duplicate check
+            if (document.getElementById(`post-${post.id}`)) return;
 
             const timeline = document.getElementById('timeline');
             if (timeline.children.length === 1 && timeline.children[0].tagName === 'P') {
@@ -533,25 +573,9 @@
             const avatarUrl = getAvatarUrl(post.email);
             const timeAgo = timeSince(new Date(post.created_at));
             const isMine = currentUser && currentUser.id === post.user_id;
-
-            // ▼ 文字数制限ロジック (150文字)
-            const LIMIT = 150;
-            const rawContent = post.content || "";
-            let contentHtml = "";
-
-            if (rawContent.length > LIMIT) {
-                // 生テキストをカットしてからサニタイズ・リンク化 (タグ切れ防止のため)
-                const shortText = rawContent.substring(0, LIMIT) + "...";
-                const shortHtml = linkify(sanitize(shortText));
-                const fullHtml = linkify(sanitize(rawContent));
-                
-                contentHtml = `
-                    <span class="short-view">${shortHtml} <span class="read-more-btn" onclick="expandPost(this)">続きを読む</span></span>
-                    <span class="full-view hidden">${fullHtml}</span>
-                `;
-            } else {
-                contentHtml = linkify(sanitize(rawContent));
-            }
+            
+            // 140文字制限になったため、折りたたみ機能は削除してシンプルに表示
+            const contentHtml = linkify(sanitize(post.content));
 
             const div = document.createElement('div');
             div.className = 'post';
@@ -581,18 +605,6 @@
                 timeline.prepend(div);
             } else {
                 timeline.appendChild(div);
-            }
-        }
-
-        // 続きを読むボタン用関数 (Global Scope)
-        window.expandPost = function(btn) {
-            const parent = btn.closest('.post-text');
-            const shortView = parent.querySelector('.short-view');
-            const fullView = parent.querySelector('.full-view');
-            
-            if (shortView && fullView) {
-                shortView.classList.add('hidden');
-                fullView.classList.remove('hidden');
             }
         }
 
