@@ -631,6 +631,41 @@
                 return;
             }
 
+            // URLハッシュフラグメントから認証情報を処理
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
+            const type = hashParams.get('type');
+            
+            // メール認証からのリダイレクトの場合
+            if (accessToken && type === 'signup') {
+                console.log('📧 メール認証からのリダイレクトを検出');
+                try {
+                    const { data, error } = await supabaseClient.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    });
+                    
+                    if (error) throw error;
+                    
+                    currentUser = data.user;
+                    console.log('✅ セッション設定成功:', currentUser.email);
+                    
+                    // URLをクリーンアップ
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    await setupApp();
+                    showToast('メール認証完了！ようこそ PenGuin へ 🎉', 'success');
+                    return;
+                } catch (err) {
+                    console.error('❌ セッション設定エラー:', err);
+                    document.getElementById('loading').classList.remove('show');
+                    showToast('認証エラーが発生しました', 'error');
+                    document.getElementById('authModal').classList.add('show');
+                    return;
+                }
+            }
+
             const { data: { session } } = await supabaseClient.auth.getSession();
             
             if (!session) {
