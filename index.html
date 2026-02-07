@@ -474,16 +474,40 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        // ⚠️ ここにあなたのSupabase URLとANON KEYを設定してください
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';  // 例: 'https://xxxxx.supabase.co'
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';  // Supabaseのダッシュボードから取得
         
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Supabaseクライアントを初期化
+        let supabaseClient;
+        try {
+            if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL' || 
+                !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+                throw new Error('Supabase URLとANON KEYを設定してください');
+            }
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (error) {
+            console.error('Supabase初期化エラー:', error);
+            document.body.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; text-align:center; padding:20px;">
+                    <div>
+                        <h1 style="color:#e74c3c;">⚠️ 設定エラー</h1>
+                        <p>SUPABASE_URLとSUPABASE_ANON_KEYを設定してください。</p>
+                        <p style="color:#666; font-size:14px;">HTMLファイルの477-478行目を編集してください。</p>
+                    </div>
+                </div>
+            `;
+            throw error;
+        }
         
         let currentUser = null;
         let postSubscription = null;
         let likeSubscription = null;
         let repostSubscription = null;
         let commentSubscription = null;
+        let likesData = {};
+        let repostsData = {};
+        let commentsData = {};
 
         async function init() {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -1077,7 +1101,9 @@
                 duration: 3000,
                 gravity: "top", 
                 position: "center", 
-                backgroundColor: colors[type],
+                style: {
+                    background: colors[type]
+                },
                 stopOnFocus: true,
             }).showToast();
         }
