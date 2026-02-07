@@ -217,39 +217,22 @@
         .action-item.delete:hover { color: #e0245e; }
         
         /* いいね関連 */
-        .action-item.liked {
-            color: var(--like-color);
-        }
-        .action-item.liked i {
-            animation: heartBeat 0.3s ease;
-        }
+        .like-btn.liked { color: var(--like-color); }
+        .like-btn.liked:hover { color: #c91c4d; }
         
         /* リポスト関連 */
-        .action-item.reposted {
-            color: var(--repost-color);
-        }
-        
-        .repost-indicator {
-            font-size: 0.85rem;
-            color: var(--text-light);
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .repost-indicator i {
-            color: var(--repost-color);
-        }
+        .repost-btn.reposted { color: var(--repost-color); }
+        .repost-btn.reposted:hover { color: #0f9e50; }
 
-        /* コメントセクション */
+        /* コメント関連 */
         .comments-section {
+            display: none;
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px solid var(--border);
-            display: none;
         }
         
-        .comments-section.active {
+        .comments-section.show {
             display: block;
         }
         
@@ -264,9 +247,8 @@
             padding: 8px 12px;
             border: 1px solid var(--border);
             border-radius: 20px;
-            font-family: inherit;
-            font-size: 0.95rem;
             outline: none;
+            font-family: inherit;
         }
         
         .comment-input:focus {
@@ -275,492 +257,589 @@
         
         .comment-btn {
             padding: 8px 16px;
-            border-radius: 20px;
-            border: none;
             background: var(--primary);
             color: white;
-            font-weight: 600;
+            border: none;
+            border-radius: 20px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-weight: 700;
+            transition: 0.2s;
         }
         
         .comment-btn:hover {
             background: var(--primary-dark);
         }
         
-        .comment-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+        .comments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
         
         .comment-item {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            padding: 8px;
-            border-radius: 8px;
-            background: #f8f9fa;
-        }
-        
-        .comment-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-        }
-        
-        .comment-content {
-            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg);
+            border-radius: 12px;
+            font-size: 0.9rem;
         }
         
         .comment-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 5px;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
         
         .comment-author {
             font-weight: 700;
-            font-size: 0.9rem;
+            color: var(--text);
+            font-size: 0.85rem;
         }
         
         .comment-time {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: var(--text-light);
         }
         
         .comment-text {
-            font-size: 0.9rem;
-            margin-top: 2px;
-        }
-        
-        .comments-list {
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 5px;
-        }
-        
-        .comments-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .comments-list::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        
-        .comments-list::-webkit-scrollbar-thumb {
-            background: #ccc;
-            border-radius: 10px;
-        }
-        
-        .comments-list::-webkit-scrollbar-thumb:hover {
-            background: #aaa;
+            color: var(--text);
         }
         
         .comment-delete {
             color: var(--text-light);
             cursor: pointer;
-            font-size: 0.85rem;
+            padding: 2px 6px;
+            font-size: 0.75rem;
         }
         
         .comment-delete:hover {
             color: #e0245e;
         }
 
-        #login-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #e0f7fa 0%, #fff 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+        .right-sidebar {
+            padding: 2rem;
+            background: var(--bg);
+            overflow-y: auto;
         }
 
-        .login-card {
+        .widget {
+            background: var(--white);
+            padding: 1rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .widget h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
             background: white;
-            padding: 3rem;
-            border-radius: 24px;
-            box-shadow: 0 10px 40px rgba(0, 52, 89, 0.15);
-            text-align: center;
+            padding: 2rem;
+            border-radius: var(--radius);
             max-width: 400px;
             width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
 
-        .login-card h1 {
-            font-size: 2.5rem;
+        .modal h2 {
+            margin-bottom: 1rem;
             color: var(--secondary);
+        }
+
+        .form-group {
             margin-bottom: 1rem;
         }
-        .login-card h1 i { color: var(--primary); }
 
-        .login-card p {
-            color: var(--text-light);
-            margin-bottom: 2rem;
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            color: var(--text);
         }
 
-        .input-group {
-            margin-bottom: 1rem;
-            text-align: left;
-        }
-
-        .input-group input {
+        .form-group input {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid var(--border);
-            border-radius: 12px;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
             font-size: 1rem;
-            transition: border 0.2s;
+            font-family: inherit;
         }
-        .input-group input:focus {
+
+        .form-group input:focus {
             outline: none;
             border-color: var(--primary);
         }
 
-        .btn-primary {
-            width: 100%;
-            padding: 14px;
-            background: var(--primary);
-            color: white;
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.75rem;
             border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
+            border-radius: 8px;
             font-weight: 700;
             cursor: pointer;
             transition: 0.2s;
         }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
         .btn-primary:hover {
             background: var(--primary-dark);
-            transform: translateY(-2px);
         }
 
-        .hidden { display: none !important; }
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text);
+        }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .btn-secondary:hover {
+            background: #d1d8dd;
         }
-        
-        @keyframes heartBeat {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.3); }
+
+        .error-msg {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
         }
-        
-        @keyframes slideIn {
-            from { 
-                opacity: 0; 
-                transform: translateX(-20px);
-                background: rgba(0, 168, 232, 0.1);
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
             }
-            to { 
-                opacity: 1; 
-                transform: translateX(0);
-                background: transparent;
+            .sidebar, .right-sidebar {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Login Screen -->
-    <div id="login-overlay">
-        <div class="login-card">
-            <h1><i class="fa-solid fa-fish"></i> PenGuin</h1>
-            <p>Write it cool. 🐧</p>
-            <div class="input-group">
-                <input type="email" id="email" placeholder="メールアドレス">
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="modal-overlay" id="authModal">
+        <div class="modal">
+            <h2 id="authTitle">ログイン</h2>
+            <div class="form-group">
+                <label>メールアドレス</label>
+                <input type="email" id="authEmail" placeholder="your@email.com">
             </div>
-            <div class="input-group">
-                <input type="password" id="password" placeholder="パスワード">
+            <div class="form-group">
+                <label>パスワード</label>
+                <input type="password" id="authPassword" placeholder="パスワードを入力">
             </div>
-            <button class="btn-primary" onclick="handleAuth()">ログイン / サインアップ</button>
+            <div class="error-msg" id="authError"></div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="loginBtn">ログイン</button>
+                <button class="btn btn-secondary" id="signupBtn">サインアップ</button>
+            </div>
         </div>
     </div>
 
-    <!-- Main App -->
-    <div id="app-screen" class="hidden">
-        <div class="app-container">
-            <!-- Sidebar -->
-            <aside class="sidebar">
-                <a href="#" class="brand">
-                    <i class="fa-solid fa-fish"></i> PenGuin
-                </a>
-                <a href="#" class="nav-btn active">
-                    <i class="fa-solid fa-house"></i> ホーム
-                </a>
-                <a href="#" class="nav-btn">
-                    <i class="fa-solid fa-user"></i> プロフィール
-                </a>
-                <a href="#" class="nav-btn" onclick="handleLogout()">
-                    <i class="fa-solid fa-right-from-bracket"></i> ログアウト
-                </a>
-                <button class="nav-btn btn-tweet" onclick="document.getElementById('post-content').focus()">
-                    Pen!
-                </button>
-            </aside>
+    <div class="app-container">
+        <aside class="sidebar">
+            <a href="#" class="brand">
+                <i class="fa-solid fa-dove"></i>
+                PenGuin
+            </a>
+            <nav>
+                <a href="#" class="nav-btn active"><i class="fa-solid fa-house"></i> ホーム</a>
+                <a href="#" class="nav-btn"><i class="fa-solid fa-bell"></i> 通知</a>
+                <a href="#" class="nav-btn"><i class="fa-solid fa-envelope"></i> メッセージ</a>
+                <a href="#" class="nav-btn"><i class="fa-solid fa-user"></i> プロフィール</a>
+                <a href="#" class="nav-btn" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> ログアウト</a>
+            </nav>
+            <button class="nav-btn btn-tweet">投稿する</button>
+        </aside>
 
-            <!-- Main Feed -->
-            <main class="main-feed">
-                <div class="header">ホーム</div>
-
-                <div class="compose-box">
-                    <img id="user-avatar" src="" class="avatar" alt="You">
-                    <div class="compose-area">
-                        <textarea id="post-content" placeholder="今どうしてる？" maxlength="140"></textarea>
-                        <div class="compose-actions">
-                            <span id="char-count" class="char-counter">0/140</span>
-                            <button id="post-btn" class="btn-sm" onclick="submitPost()" disabled>Pen!</button>
-                        </div>
+        <main class="main-feed">
+            <div class="header">ホーム</div>
+            <div class="compose-box">
+                <img id="userAvatar" src="" class="avatar" alt="Your avatar">
+                <div class="compose-area">
+                    <textarea id="tweetInput" placeholder="いまどうしてる？" maxlength="280"></textarea>
+                    <div class="compose-actions">
+                        <span class="char-counter" id="charCounter">0 / 280</span>
+                        <button class="btn-sm" id="postBtn" onclick="postTweet()" disabled>投稿</button>
                     </div>
                 </div>
+            </div>
+            <div id="timeline"></div>
+        </main>
 
-                <div id="timeline"></div>
-            </main>
-
-            <!-- Right Sidebar (Empty for now) -->
-            <aside style="padding: 1rem; background: var(--bg);"></aside>
-        </div>
+        <aside class="right-sidebar">
+            <div class="widget">
+                <h3>🐧 PenGuinについて</h3>
+                <p style="font-size:0.9rem; color: var(--text-light);">
+                    シンプルで楽しいSNS体験を。あなたの今をシェアしよう！
+                </p>
+            </div>
+            <div class="widget">
+                <h3>🌟 トレンド</h3>
+                <p style="font-size:0.9rem; color: var(--text-light);">
+                    #今日の出来事<br>
+                    #プログラミング<br>
+                    #PenGuin
+                </p>
+            </div>
+        </aside>
     </div>
 
     <script>
-        // Cloudflare WorkerのURL（デプロイ後に更新してください）
-        const CONFIG_WORKER_URL = 'https://shrill-block-fafd.boleft704.workers.dev/';
-        
-        // Supabaseクライアント用の変数
         let supabaseClient;
-        let supabaseError = null;
-        let configLoaded = false;
-        
         let currentUser = null;
         let postSubscription = null;
-        let likeSubscription = null;
-        let repostSubscription = null;
         let commentSubscription = null;
         let likesData = {};
         let repostsData = {};
         let commentsData = {};
 
-        // Cloudflare Workerから認証情報を取得してSupabaseを初期化
-        async function initializeSupabase() {
+        // ★★★ ここを修正: Workerから設定を取得する部分 ★★★
+        async function initSupabase() {
             try {
-                const response = await fetch(CONFIG_WORKER_URL);
+                // WorkerのURLを設定（あなたのWorkerのURLに変更してください）
+                const WORKER_URL = 'https://your-worker.your-subdomain.workers.dev';
                 
+                console.log('Fetching config from worker...');
+                
+                const response = await fetch(WORKER_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    // ★重要: referrerPolicyを設定してRefererヘッダーを送信
+                    referrerPolicy: 'strict-origin-when-cross-origin'
+                });
+
                 if (!response.ok) {
-                    throw new Error(`Worker response error: ${response.status}`);
+                    throw new Error(`Worker responded with status: ${response.status}`);
                 }
-                
+
                 const config = await response.json();
-                
+                console.log('Config received from worker');
+
                 if (!config.supabaseUrl || !config.supabaseAnonKey) {
-                    throw new Error('Supabase認証情報が取得できませんでした');
+                    throw new Error('Invalid config received from worker');
                 }
-                
-                // Supabaseクライアントを初期化
+
                 supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
-                configLoaded = true;
+                console.log('Supabase client initialized');
                 
-                console.log('✅ Supabase initialized successfully');
-                
+                return true;
             } catch (error) {
-                supabaseError = error.message;
-                console.error('❌ Supabase初期化エラー:', error);
-                
-                // エラーメッセージを表示
-                if (error.message.includes('Failed to fetch') || error.message.includes('Worker response error')) {
-                    supabaseError = 'Cloudflare Workerに接続できません。CONFIG_WORKER_URLを確認してください。';
-                }
+                console.error('Failed to initialize Supabase:', error);
+                showToast('設定の読み込みに失敗しました: ' + error.message, 'error');
+                return false;
             }
         }
 
         async function init() {
-            // まずCloudflare Workerから認証情報を取得
-            await initializeSupabase();
+            document.getElementById('loading').classList.add('show');
             
-            if (supabaseError) {
-                showLogin();
-                document.getElementById('login-overlay').innerHTML = `
-                    <div class="login-card">
-                        <h1 style="color:#e74c3c;">⚠️ 設定エラー</h1>
-                        <p>${supabaseError}</p>
-                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: left;">
-                            <p style="font-weight: bold; margin-bottom: 10px;">設定手順:</p>
-                            <ol style="margin-left: 20px; color:#666; font-size:14px;">
-                                <li>Cloudflare Workerをデプロイ</li>
-                                <li>Worker設定でSUPABASE_URLとSUPABASE_ANON_KEYをSecretとして追加</li>
-                                <li>HTMLファイルの477行目のCONFIG_WORKER_URLを更新</li>
-                            </ol>
-                        </div>
-                    </div>
-                `;
+            // Supabaseの初期化
+            const initialized = await initSupabase();
+            if (!initialized) {
+                document.getElementById('loading').classList.remove('show');
+                showToast('アプリの初期化に失敗しました', 'error');
                 return;
             }
-            
+
             const { data: { session } } = await supabaseClient.auth.getSession();
             
-            if (session) {
+            if (!session) {
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('authModal').classList.add('show');
+            } else {
                 currentUser = session.user;
-                showApp();
-                await Promise.all([
-                    fetchPosts(),
-                    fetchLikes(),
-                    fetchReposts(),
-                    fetchComments()
-                ]);
-                subscribeToPosts();
-                subscribeToLikes();
-                subscribeToReposts();
-                subscribeToComments();
-            } else {
-                showLogin();
+                await setupApp();
             }
 
-            supabaseClient.auth.onAuthStateChange((_event, session) => {
-                if (session) {
-                    currentUser = session.user;
-                    showApp();
-                    fetchPosts();
-                    fetchLikes();
-                    fetchReposts();
-                    fetchComments();
-                } else {
-                    showLogin();
+            document.getElementById('loginBtn').addEventListener('click', login);
+            document.getElementById('signupBtn').addEventListener('click', signup);
+
+            const tweetInput = document.getElementById('tweetInput');
+            const charCounter = document.getElementById('charCounter');
+            const postBtn = document.getElementById('postBtn');
+
+            tweetInput.addEventListener('input', () => {
+                const len = tweetInput.value.length;
+                charCounter.textContent = `${len} / 280`;
+                
+                charCounter.classList.remove('limit-near', 'limit-over');
+                if (len > 280) {
+                    charCounter.classList.add('limit-over');
+                } else if (len > 250) {
+                    charCounter.classList.add('limit-near');
                 }
+                
+                postBtn.disabled = len === 0 || len > 280;
             });
 
-            const textarea = document.getElementById('post-content');
-            const charCount = document.getElementById('char-count');
-            const postBtn = document.getElementById('post-btn');
-
-            textarea.addEventListener('input', () => {
-                const length = textarea.value.length;
-                charCount.textContent = `${length}/140`;
-                
-                charCount.className = 'char-counter';
-                if (length > 130) charCount.classList.add('limit-near');
-                if (length > 140) charCount.classList.add('limit-over');
-                
-                postBtn.disabled = length === 0 || length > 140;
+            tweetInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    if (!postBtn.disabled) {
+                        postTweet();
+                    }
+                }
             });
         }
 
-        function showApp() {
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('app-screen').classList.remove('hidden');
-            document.getElementById('user-avatar').src = getAvatarUrl(currentUser.email);
-        }
+        async function setupApp() {
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('authModal').classList.remove('show');
 
-        function showLogin() {
-            document.getElementById('login-overlay').classList.remove('hidden');
-            document.getElementById('app-screen').classList.add('hidden');
-        }
+            const avatarUrl = getAvatarUrl(currentUser.email);
+            document.getElementById('userAvatar').src = avatarUrl;
 
-        async function handleAuth() {
-            if (supabaseError || !configLoaded) {
-                alert('⚠️ 設定エラー\n\n' + (supabaseError || 'Supabaseの設定がロードされていません') + '\n\nCloudflare Workerの設定を確認してください。');
-                return;
-            }
+            await fetchLikesData();
+            await fetchRepostsData();
+            await fetchCommentsData();
+            await fetchPosts();
             
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            if (!email || !password) {
-                showToast("メールとパスワードを入力してください", "error");
-                return;
-            }
-
-            showToast("処理中...", "info");
-
-            const { error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
-            
-            if (signInError) {
-                const { error: signUpError } = await supabaseClient.auth.signUp({ 
-                    email, 
-                    password,
-                    options: { emailRedirectTo: window.location.href }
-                });
-
-                if (signUpError) {
-                    showToast(signUpError.message, "error");
-                } else {
-                    showToast("確認メールを送りました！メールをチェックしてね。", "success");
-                }
-            } else {
-                showToast("おかえりなさい！", "success");
-            }
+            subscribeToPosts();
+            subscribeToLikes();
+            subscribeToReposts();
+            subscribeToComments();
         }
 
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            showToast("ログアウトしました", "info");
-        }
+        async function login() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const errorEl = document.getElementById('authError');
 
-        async function submitPost() {
-            const content = document.getElementById('post-content').value;
-            const btn = document.getElementById('post-btn');
-            
-            if (!content.trim() || content.length > 140) return;
+            errorEl.textContent = '';
 
-            btn.disabled = true;
-            btn.textContent = "Pen...";
-
-            const { data, error } = await supabaseClient.from('posts').insert([
-                { user_id: currentUser.id, email: currentUser.email, content: content }
-            ]).select();
-
-            btn.disabled = false;
-            btn.textContent = "Pen!";
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
             if (error) {
-                showToast("投稿失敗: " + error.message, "error");
+                errorEl.textContent = error.message;
+                showToast('ログインに失敗しました', 'error');
             } else {
-                document.getElementById('post-content').value = "";
-                document.getElementById('char-count').textContent = "0/140";
-                document.getElementById('char-count').className = "char-counter";
-                document.getElementById('post-btn').disabled = true;
-
-                showToast("投稿しました！", "success");
-                
-                if (data && data.length > 0) {
-                    addPostToDOM(data[0], true);
-                }
+                currentUser = data.user;
+                await setupApp();
+                showToast('ログインしました！', 'success');
             }
+        }
+
+        async function signup() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const errorEl = document.getElementById('authError');
+
+            errorEl.textContent = '';
+
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+
+            if (error) {
+                errorEl.textContent = error.message;
+                showToast('サインアップに失敗しました', 'error');
+            } else {
+                showToast('確認メールを送信しました。メールを確認してください。', 'info');
+            }
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            currentUser = null;
+            document.getElementById('authModal').classList.add('show');
+            document.getElementById('timeline').innerHTML = '';
+            showToast('ログアウトしました', 'info');
+        }
+
+        async function postTweet() {
+            const content = document.getElementById('tweetInput').value.trim();
+            if (!content || content.length > 280) return;
+
+            const { data, error } = await supabaseClient
+                .from('posts')
+                .insert([{
+                    content: content,
+                    email: currentUser.email,
+                    user_id: currentUser.id
+                }])
+                .select();
+
+            if (error) {
+                showToast('投稿に失敗しました', 'error');
+                return;
+            }
+
+            document.getElementById('tweetInput').value = '';
+            document.getElementById('charCounter').textContent = '0 / 280';
+            document.getElementById('postBtn').disabled = true;
+            showToast('投稿しました！', 'success');
         }
 
         async function deletePost(postId) {
-            if(!confirm("本当にこの投稿を消しますか？")) return;
+            if (!confirm('この投稿を削除しますか？')) return;
 
             const { error } = await supabaseClient
                 .from('posts')
                 .delete()
-                .eq('id', postId)
-                .eq('user_id', currentUser.id);
+                .eq('id', postId);
 
             if (error) {
-                showToast("削除できませんでした: " + error.message, "error");
-            } else {
-                showToast("削除しました", "info");
-                const el = document.getElementById(`post-${postId}`);
-                if(el) el.remove();
+                showToast('削除に失敗しました', 'error');
+                return;
             }
+
+            document.getElementById(`post-${postId}`)?.remove();
+            showToast('投稿を削除しました', 'success');
         }
 
-        // === いいね機能 ===
-
-        async function fetchLikes() {
+        async function fetchLikesData() {
             const { data, error } = await supabaseClient
                 .from('likes')
                 .select('*');
-            
-            if (!error && data) {
-                likesData = {};
-                data.forEach(like => {
-                    if (!likesData[like.post_id]) {
-                        likesData[like.post_id] = { count: 0, users: [] };
-                    }
-                    likesData[like.post_id].count++;
-                    likesData[like.post_id].users.push(like.user_id);
-                });
+
+            if (error) {
+                console.error('Error fetching likes:', error);
+                return;
             }
+
+            likesData = {};
+            data.forEach(like => {
+                if (!likesData[like.post_id]) {
+                    likesData[like.post_id] = { count: 0, users: [] };
+                }
+                likesData[like.post_id].count++;
+                likesData[like.post_id].users.push(like.user_id);
+            });
+        }
+
+        async function fetchRepostsData() {
+            const { data, error } = await supabaseClient
+                .from('reposts')
+                .select('*');
+
+            if (error) {
+                console.error('Error fetching reposts:', error);
+                return;
+            }
+
+            repostsData = {};
+            data.forEach(repost => {
+                if (!repostsData[repost.post_id]) {
+                    repostsData[repost.post_id] = { count: 0, users: [] };
+                }
+                repostsData[repost.post_id].count++;
+                repostsData[repost.post_id].users.push(repost.user_id);
+            });
+        }
+
+        async function fetchCommentsData() {
+            const { data, error } = await supabaseClient
+                .from('comments')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Error fetching comments:', error);
+                return;
+            }
+
+            commentsData = {};
+            data.forEach(comment => {
+                if (!commentsData[comment.post_id]) {
+                    commentsData[comment.post_id] = [];
+                }
+                commentsData[comment.post_id].push(comment);
+            });
+        }
+
+        function subscribeToLikes() {
+            supabaseClient.channel('public:likes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, async () => {
+                    await fetchLikesData();
+                    document.querySelectorAll('.post').forEach(post => {
+                        const postId = post.id.replace('post-', '');
+                        updateLikeButton(postId);
+                    });
+                })
+                .subscribe();
+        }
+
+        function subscribeToReposts() {
+            supabaseClient.channel('public:reposts')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'reposts' }, async () => {
+                    await fetchRepostsData();
+                    document.querySelectorAll('.post').forEach(post => {
+                        const postId = post.id.replace('post-', '');
+                        updateRepostButton(postId);
+                    });
+                })
+                .subscribe();
         }
 
         async function toggleLike(postId) {
@@ -774,74 +853,17 @@
                     .eq('post_id', postId)
                     .eq('user_id', currentUser.id);
 
-                if (!error) {
-                    likesData[postId].count--;
-                    likesData[postId].users = likesData[postId].users.filter(id => id !== currentUser.id);
-                    updateLikeUI(postId);
+                if (error) {
+                    showToast('いいねの解除に失敗しました', 'error');
                 }
             } else {
                 const { error } = await supabaseClient
                     .from('likes')
                     .insert([{ post_id: postId, user_id: currentUser.id }]);
 
-                if (!error) {
-                    if (!likesData[postId]) {
-                        likesData[postId] = { count: 0, users: [] };
-                    }
-                    likesData[postId].count++;
-                    likesData[postId].users.push(currentUser.id);
-                    updateLikeUI(postId);
+                if (error) {
+                    showToast('いいねに失敗しました', 'error');
                 }
-            }
-        }
-
-        function updateLikeUI(postId) {
-            const likeBtn = document.querySelector(`#post-${postId} .like-btn`);
-            if (!likeBtn) return;
-
-            const likeInfo = likesData[postId] || { count: 0, users: [] };
-            const isLiked = likeInfo.users.includes(currentUser.id);
-
-            likeBtn.className = `action-item like-btn ${isLiked ? 'liked' : ''}`;
-            likeBtn.innerHTML = `
-                <i class="fa${isLiked ? '-solid' : '-regular'} fa-heart"></i>
-                ${likeInfo.count > 0 ? likeInfo.count : ''}
-            `;
-        }
-
-        function subscribeToLikes() {
-            if (likeSubscription) return;
-
-            likeSubscription = supabaseClient.channel('public:likes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, payload => {
-                    fetchLikes().then(() => {
-                        if (payload.new && payload.new.post_id) {
-                            updateLikeUI(payload.new.post_id);
-                        }
-                        if (payload.old && payload.old.post_id) {
-                            updateLikeUI(payload.old.post_id);
-                        }
-                    });
-                })
-                .subscribe();
-        }
-
-        // === リポスト機能 ===
-
-        async function fetchReposts() {
-            const { data, error } = await supabaseClient
-                .from('reposts')
-                .select('*');
-            
-            if (!error && data) {
-                repostsData = {};
-                data.forEach(repost => {
-                    if (!repostsData[repost.post_id]) {
-                        repostsData[repost.post_id] = { count: 0, users: [] };
-                    }
-                    repostsData[repost.post_id].count++;
-                    repostsData[repost.post_id].users.push(repost.user_id);
-                });
             }
         }
 
@@ -856,30 +878,35 @@
                     .eq('post_id', postId)
                     .eq('user_id', currentUser.id);
 
-                if (!error) {
-                    repostsData[postId].count--;
-                    repostsData[postId].users = repostsData[postId].users.filter(id => id !== currentUser.id);
-                    updateRepostUI(postId);
-                    showToast("リポストを取り消しました", "info");
+                if (error) {
+                    showToast('リポストの解除に失敗しました', 'error');
                 }
             } else {
                 const { error } = await supabaseClient
                     .from('reposts')
                     .insert([{ post_id: postId, user_id: currentUser.id }]);
 
-                if (!error) {
-                    if (!repostsData[postId]) {
-                        repostsData[postId] = { count: 0, users: [] };
-                    }
-                    repostsData[postId].count++;
-                    repostsData[postId].users.push(currentUser.id);
-                    updateRepostUI(postId);
-                    showToast("リポストしました！", "success");
+                if (error) {
+                    showToast('リポストに失敗しました', 'error');
                 }
             }
         }
 
-        function updateRepostUI(postId) {
+        function updateLikeButton(postId) {
+            const likeBtn = document.querySelector(`#post-${postId} .like-btn`);
+            if (!likeBtn) return;
+
+            const likeInfo = likesData[postId] || { count: 0, users: [] };
+            const isLiked = likeInfo.users.includes(currentUser.id);
+
+            likeBtn.className = `action-item like-btn ${isLiked ? 'liked' : ''}`;
+            likeBtn.innerHTML = `
+                <i class="fa${isLiked ? '-solid' : '-regular'} fa-heart"></i>
+                ${likeInfo.count > 0 ? likeInfo.count : ''}
+            `;
+        }
+
+        function updateRepostButton(postId) {
             const repostBtn = document.querySelector(`#post-${postId} .repost-btn`);
             if (!repostBtn) return;
 
@@ -893,117 +920,29 @@
             `;
         }
 
-        function subscribeToReposts() {
-            if (repostSubscription) return;
-
-            repostSubscription = supabaseClient.channel('public:reposts')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'reposts' }, payload => {
-                    fetchReposts().then(() => {
-                        if (payload.new && payload.new.post_id) {
-                            updateRepostUI(payload.new.post_id);
-                        }
-                        if (payload.old && payload.old.post_id) {
-                            updateRepostUI(payload.old.post_id);
-                        }
-                    });
-                })
-                .subscribe();
-        }
-
-        // === コメント機能 ===
-
-        async function fetchComments() {
-            const { data, error } = await supabaseClient
-                .from('comments')
-                .select('*')
-                .order('created_at', { ascending: true });
-            
-            if (!error && data) {
-                commentsData = {};
-                data.forEach(comment => {
-                    if (!commentsData[comment.post_id]) {
-                        commentsData[comment.post_id] = [];
-                    }
-                    commentsData[comment.post_id].push(comment);
-                });
-            }
-        }
-
         function toggleComments(postId) {
             const commentsSection = document.querySelector(`#post-${postId} .comments-section`);
             if (!commentsSection) return;
 
-            const wasActive = commentsSection.classList.contains('active');
-            commentsSection.classList.toggle('active');
+            const isShown = commentsSection.classList.contains('show');
             
-            if (!wasActive) {
-                // コメントを開いたとき
+            if (!isShown) {
+                commentsSection.classList.add('show');
                 renderComments(postId);
-                const input = commentsSection.querySelector('.comment-input');
-                if (input) {
-                    // 少し遅延させてからフォーカス（アニメーション後）
-                    setTimeout(() => {
-                        input.focus();
-                        // コメントリストの最下部にスクロール
-                        const commentsList = commentsSection.querySelector('.comments-list');
-                        if (commentsList) {
-                            commentsList.scrollTop = commentsList.scrollHeight;
-                        }
-                    }, 100);
-                }
-            }
-        }
-
-        function renderComments(postId) {
-            const container = document.querySelector(`#post-${postId} .comments-list`);
-            if (!container) return;
-
-            const comments = commentsData[postId] || [];
-            const previousScrollHeight = container.scrollHeight;
-            const wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 10;
-            
-            if (comments.length === 0) {
-                container.innerHTML = '<p style="text-align:center; color:var(--text-light); font-size:0.9rem; padding:10px;">まだコメントがありません</p>';
-                return;
-            }
-
-            container.innerHTML = comments.map(comment => {
-                const isMine = currentUser.id === comment.user_id;
-                const timeAgo = timeSince(new Date(comment.created_at));
-                return `
-                    <div class="comment-item">
-                        <img src="${getAvatarUrl(comment.email)}" class="comment-avatar" alt="User">
-                        <div class="comment-content">
-                            <div class="comment-header">
-                                <span class="comment-author">${sanitize(comment.email.split('@')[0])}</span>
-                                <span class="comment-time">· ${timeAgo}</span>
-                            </div>
-                            <div class="comment-text">${sanitize(comment.content)}</div>
-                        </div>
-                        ${isMine ? `<span class="comment-delete" onclick="deleteComment('${comment.id}', '${postId}')"><i class="fa-solid fa-trash"></i></span>` : ''}
-                    </div>
-                `;
-            }).join('');
-            
-            // 新しいコメントが追加された場合、自動的に最下部にスクロール
-            if (wasAtBottom || container.scrollHeight > previousScrollHeight) {
-                setTimeout(() => {
-                    container.scrollTop = container.scrollHeight;
-                }, 50);
+            } else {
+                commentsSection.classList.remove('show');
             }
         }
 
         async function submitComment(postId) {
-            const input = document.querySelector(`#post-${postId} .comment-input`);
-            const btn = document.querySelector(`#post-${postId} .comment-btn`);
-            
-            if (!input || !btn) return;
-            
-            const content = input.value.trim();
-            if (!content) return;
+            const commentInput = document.querySelector(`#post-${postId} .comment-input`);
+            if (!commentInput) return;
 
-            btn.disabled = true;
-            btn.textContent = '送信中...';
+            const content = commentInput.value.trim();
+            if (!content) {
+                showToast('コメントを入力してください', 'error');
+                return;
+            }
 
             const { error } = await supabaseClient
                 .from('comments')
@@ -1014,33 +953,59 @@
                     content: content
                 }]);
 
-            btn.disabled = false;
-            btn.textContent = '送信';
-
             if (error) {
-                showToast("コメント失敗: " + error.message, "error");
-            } else {
-                input.value = '';
-                // リアルタイムサブスクリプションが自動的にUIを更新するため、
-                // ここでは何もしない（トーストのみ表示）
-                showToast("コメントしました！", "success");
+                showToast('コメントの投稿に失敗しました', 'error');
+                return;
             }
+
+            commentInput.value = '';
+            showToast('コメントしました！', 'success');
         }
 
         async function deleteComment(commentId, postId) {
-            if (!confirm("このコメントを削除しますか？")) return;
+            if (!confirm('このコメントを削除しますか？')) return;
 
             const { error } = await supabaseClient
                 .from('comments')
                 .delete()
-                .eq('id', commentId)
-                .eq('user_id', currentUser.id);
+                .eq('id', commentId);
 
             if (error) {
-                showToast("削除できませんでした: " + error.message, "error");
-            } else {
-                showToast("削除しました", "info");
+                showToast('削除に失敗しました', 'error');
+                return;
             }
+
+            showToast('コメントを削除しました', 'success');
+        }
+
+        function renderComments(postId) {
+            const commentsList = document.querySelector(`#post-${postId} .comments-list`);
+            if (!commentsList) return;
+
+            const comments = commentsData[postId] || [];
+            
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<p style="text-align:center; color: var(--text-light); font-size: 0.85rem;">まだコメントがありません</p>';
+                return;
+            }
+
+            commentsList.innerHTML = comments.map(comment => {
+                const isMine = currentUser && currentUser.id === comment.user_id;
+                const timeAgo = timeSince(new Date(comment.created_at));
+                
+                return `
+                    <div class="comment-item">
+                        <div class="comment-header">
+                            <span class="comment-author">${sanitize(comment.email.split('@')[0])}</span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <span class="comment-time">${timeAgo}</span>
+                                ${isMine ? `<span class="comment-delete" onclick="deleteComment('${comment.id}', '${postId}')"><i class="fa-solid fa-trash"></i></span>` : ''}
+                            </div>
+                        </div>
+                        <div class="comment-text">${sanitize(comment.content)}</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function updateCommentCount(postId) {
@@ -1059,31 +1024,26 @@
 
             commentSubscription = supabaseClient.channel('public:comments')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
-                    // 新しいコメントが追加されたとき - 即座に反映
                     const comment = payload.new;
                     if (!commentsData[comment.post_id]) {
                         commentsData[comment.post_id] = [];
                     }
                     commentsData[comment.post_id].push(comment);
                     
-                    // UIを即座に更新
                     renderComments(comment.post_id);
                     updateCommentCount(comment.post_id);
                     
-                    // アニメーション効果を追加
                     const commentsList = document.querySelector(`#post-${comment.post_id} .comments-list`);
                     if (commentsList && commentsList.lastElementChild) {
                         commentsList.lastElementChild.style.animation = 'slideIn 0.3s ease';
                     }
                 })
                 .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'comments' }, payload => {
-                    // コメントが削除されたとき
                     const comment = payload.old;
                     if (commentsData[comment.post_id]) {
                         commentsData[comment.post_id] = commentsData[comment.post_id].filter(c => c.id !== comment.id);
                     }
                     
-                    // UIを即座に更新
                     renderComments(comment.post_id);
                     updateCommentCount(comment.post_id);
                 })
@@ -1137,7 +1097,6 @@
             
             const contentHtml = linkify(sanitize(post.content));
 
-            // いいね・リポストの情報
             const likeInfo = likesData[post.id] || { count: 0, users: [] };
             const isLiked = likeInfo.users.includes(currentUser.id);
             
@@ -1193,7 +1152,6 @@
                 timeline.appendChild(div);
             }
             
-            // コメント入力のエンターキー対応
             const commentInput = div.querySelector('.comment-input');
             if (commentInput) {
                 commentInput.addEventListener('keypress', (e) => {
