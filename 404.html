@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <script>
+        // GitHub PagesのSPAリダイレクト処理
+        // URLのパスとハッシュを保持してindex.htmlにリダイレクト
+        (function() {
+            var redirect = sessionStorage.getItem('redirect');
+            if (redirect) {
+                sessionStorage.removeItem('redirect');
+                window.location.replace(redirect);
+            } else {
+                // 現在のURLをindex.htmlにリダイレクト（ハッシュを保持）
+                var path = window.location.pathname.slice(1);
+                var hash = window.location.hash;
+                window.location.replace('/' + hash);
+            }
+        })();
+    </script>
+</head>
+<body>
+    <p>リダイレクト中...</p>
+</body>
+</html>
