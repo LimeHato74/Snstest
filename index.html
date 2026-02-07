@@ -774,7 +774,13 @@
 
             errorEl.textContent = '';
 
-            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            const { data, error } = await supabaseClient.auth.signUp({ 
+                email, 
+                password,
+                options: {
+                    emailRedirectTo: 'https://limehato74.github.io/'
+                }
+            });
 
             if (error) {
                 errorEl.textContent = error.message;
