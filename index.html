@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My GitHub SNS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* 簡易スタイル */
+        .post-card { border-bottom: 1px solid #333; padding: 1rem 0; }
+        .post-meta { font-size: 0.8em; color: #888; }
+        #app-screen { display: none; } /* 初期状態は非表示 */
+    </style>
+</head>
+<body>
+    <main class="container">
+        <h1>Mini SNS on GitHub Pages</h1>
+
+        <div id="login-screen">
+            <article>
+                <h3>ログイン / 新規登録</h3>
+                <p>メールとパスワードを入力してください。<br>(初回は自動的にユーザー登録されます)</p>
+                <input type="email" id="email" placeholder="メールアドレス">
+                <input type="password" id="password" placeholder="パスワード">
+                <button onclick="handleLogin()">ログイン / 登録</button>
+                <p id="login-msg"></p>
+            </article>
+        </div>
+
+        <div id="app-screen">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <p>ようこそ: <span id="user-email"></span></p>
+                <button class="outline" onclick="handleLogout()">ログアウト</button>
+            </div>
+            
+            <article>
+                <textarea id="post-content" placeholder="今なにしてる？"></textarea>
+                <button onclick="submitPost()">投稿する</button>
+            </article>
+
+            <h3>タイムライン</h3>
+            <div id="timeline">
+                <p>読み込み中...</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ▼▼▼ ここを書き換えてください ▼▼▼
+        const SUPABASE_URL = 'https://fieflcvbmzysidxpnqbo.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpZWZsY3ZibXp5c2lkeHBucWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NDEyNzQsImV4cCI6MjA4NjAxNzI3NH0.qlsYHqlFHxLknLNb8cAO4aqRamjkwOBLhx74BGSD8Us';
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+    // 【修正】変数名を 'supabase' から 'supabaseClient' に変更して衝突を回避
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let currentUser = null;
+
+        // 1. 初期化処理 & ログイン状態監視
+        async function init() {
+            // 【修正】すべて supabaseClient に変更
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            updateUI(session);
+
+            // ログイン状態の変化をリアルタイム監視
+            supabaseClient.auth.onAuthStateChange((_event, session) => {
+                updateUI(session);
+            });
+
+            // 投稿一覧を取得
+            fetchPosts();
+            
+            // リアルタイム更新の購読
+            supabaseClient.channel('public:posts')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, payload => {
+                    // 新しい投稿が来たら先頭に追加
+                    addPostToDOM(payload.new, true); 
+                })
+                .subscribe();
+        }
+
+        // UIの切り替え
+        function updateUI(session) {
+            if (session) {
+                currentUser = session.user;
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'block';
+                document.getElementById('user-email').textContent = currentUser.email;
+            } else {
+                currentUser = null;
+                document.getElementById('login-screen').style.display = 'block';
+                document.getElementById('app-screen').style.display = 'none';
+            }
+        }
+
+        // 2. ログイン / 新規登録処理
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const msg = document.getElementById('login-msg');
+
+            if (!email || !password) {
+                msg.textContent = "メールとパスワードを入力してください";
+                return;
+            }
+
+            msg.textContent = "処理中...";
+            
+            // まずログインを試す
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+                // ログイン失敗なら新規登録を試す
+                console.log("Login failed, trying signup:", error.message);
+                const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({ email, password });
+                
+                if (signUpError) {
+                    msg.textContent = "エラー: " + signUpError.message;
+                } else {
+                    msg.textContent = "登録確認メールを送信しました！メール内のリンクを押してください。";
+                }
+            } else {
+                msg.textContent = "ログイン成功！";
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+        }
+
+        // 3. 投稿機能
+        async function submitPost() {
+            const content = document.getElementById('post-content').value;
+            if (!content) return;
+
+            // 【修正】ここも supabaseClient に変更
+            const { error } = await supabaseClient.from('posts').insert([
+                { 
+                    user_id: currentUser.id, 
+                    email: currentUser.email, 
+                    content: content 
+                }
+            ]);
+
+            if (error) {
+                alert("投稿エラー: " + error.message);
+            } else {
+                document.getElementById('post-content').value = ""; // 入力欄クリア
+            }
+        }
+
+        // 4. 投稿一覧取得
+        async function fetchPosts() {
+            const { data, error } = await supabaseClient
+                .from('posts')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) {
+                console.error("データ取得エラー:", error);
+            } else {
+                const timeline = document.getElementById('timeline');
+                timeline.innerHTML = ''; // クリア
+                
+                if (data.length === 0) {
+                    timeline.innerHTML = '<p>まだ投稿がありません</p>';
+                }
+
+                data.forEach(post => addPostToDOM(post));
+            }
+        }
+
+        // 画面に投稿を追加する関数
+        function addPostToDOM(post, prepend = false) {
+            const timeline = document.getElementById('timeline');
+            // 日付のフォーマット処理（エラー回避のためtry-catch）
+            let dateStr = "日時不明";
+            try {
+                dateStr = new Date(post.created_at).toLocaleString();
+            } catch(e) {}
+            
+            // HTML要素を作成
+            const div = document.createElement('div');
+            div.className = 'post-card';
+            div.innerHTML = `
+                <strong>${sanitize(post.email)}</strong>
+                <p>${sanitize(post.content)}</p>
+                <div class="post-meta">${dateStr}</div>
+            `;
+
+            if (prepend) timeline.prepend(div);
+            else timeline.appendChild(div);
+        }
+
+        // XSS対策 (簡単なサニタイズ)
+        function sanitize(str) {
+            if (!str) return "";
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        // 開始
+        init();
+    </script>
+</body>
+</html>
