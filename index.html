@@ -113,7 +113,14 @@
             if (error) {
                 // ログイン失敗なら新規登録を試す
                 console.log("Login failed, trying signup:", error.message);
-                const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({ email, password });
+           const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({ 
+    email, 
+    password,
+    options: {
+        // ここにGitHub PagesのURLを正確に入力
+        emailRedirectTo: 'https://あなたのID.github.io/リポジトリ名/' 
+    }
+});
                 
                 if (signUpError) {
                     msg.textContent = "エラー: " + signUpError.message;
@@ -206,4 +213,5 @@
         init();
     </script>
 </body>
+
 </html>
