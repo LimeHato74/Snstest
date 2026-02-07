@@ -820,24 +820,48 @@
 
         function subscribeToLikes() {
             supabaseClient.channel('public:likes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, async () => {
-                    await fetchLikesData();
-                    document.querySelectorAll('.post').forEach(post => {
-                        const postId = post.id.replace('post-', '');
-                        updateLikeButton(postId);
-                    });
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, payload => {
+                    const like = payload.new;
+                    if (!likesData[like.post_id]) {
+                        likesData[like.post_id] = { count: 0, users: [] };
+                    }
+                    if (!likesData[like.post_id].users.includes(like.user_id)) {
+                        likesData[like.post_id].count++;
+                        likesData[like.post_id].users.push(like.user_id);
+                        updateLikeButton(like.post_id);
+                    }
+                })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'likes' }, payload => {
+                    const like = payload.old;
+                    if (likesData[like.post_id]) {
+                        likesData[like.post_id].count--;
+                        likesData[like.post_id].users = likesData[like.post_id].users.filter(uid => uid !== like.user_id);
+                        updateLikeButton(like.post_id);
+                    }
                 })
                 .subscribe();
         }
 
         function subscribeToReposts() {
             supabaseClient.channel('public:reposts')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'reposts' }, async () => {
-                    await fetchRepostsData();
-                    document.querySelectorAll('.post').forEach(post => {
-                        const postId = post.id.replace('post-', '');
-                        updateRepostButton(postId);
-                    });
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reposts' }, payload => {
+                    const repost = payload.new;
+                    if (!repostsData[repost.post_id]) {
+                        repostsData[repost.post_id] = { count: 0, users: [] };
+                    }
+                    if (!repostsData[repost.post_id].users.includes(repost.user_id)) {
+                        repostsData[repost.post_id].count++;
+                        repostsData[repost.post_id].users.push(repost.user_id);
+                        updateRepostButton(repost.post_id);
+                    }
+                })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'reposts' }, payload => {
+                    const repost = payload.old;
+                    if (repostsData[repost.post_id]) {
+                        repostsData[repost.post_id].count--;
+                        repostsData[repost.post_id].users = repostsData[repost.post_id].users.filter(uid => uid !== repost.user_id);
+                        updateRepostButton(repost.post_id);
+                    }
                 })
                 .subscribe();
         }
@@ -855,6 +879,11 @@
 
                 if (error) {
                     showToast('いいねの解除に失敗しました', 'error');
+                } else {
+                    likeInfo.count--;
+                    likeInfo.users = likeInfo.users.filter(uid => uid !== currentUser.id);
+                    likesData[postId] = likeInfo;
+                    updateLikeButton(postId);
                 }
             } else {
                 const { error } = await supabaseClient
@@ -863,6 +892,11 @@
 
                 if (error) {
                     showToast('いいねに失敗しました', 'error');
+                } else {
+                    likeInfo.count++;
+                    likeInfo.users.push(currentUser.id);
+                    likesData[postId] = likeInfo;
+                    updateLikeButton(postId);
                 }
             }
         }
@@ -880,6 +914,11 @@
 
                 if (error) {
                     showToast('リポストの解除に失敗しました', 'error');
+                } else {
+                    repostInfo.count--;
+                    repostInfo.users = repostInfo.users.filter(uid => uid !== currentUser.id);
+                    repostsData[postId] = repostInfo;
+                    updateRepostButton(postId);
                 }
             } else {
                 const { error } = await supabaseClient
@@ -888,6 +927,11 @@
 
                 if (error) {
                     showToast('リポストに失敗しました', 'error');
+                } else {
+                    repostInfo.count++;
+                    repostInfo.users.push(currentUser.id);
+                    repostsData[postId] = repostInfo;
+                    updateRepostButton(postId);
                 }
             }
         }
