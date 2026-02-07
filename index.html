@@ -474,26 +474,13 @@
     </div>
 
     <script>
-        // ⚠️ ここにあなたのSupabase URLとANON KEYを設定してください
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';  // 例: 'https://xxxxx.supabase.co'
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';  // Supabaseのダッシュボードから取得
+        // Cloudflare WorkerのURL（デプロイ後に更新してください）
+        const CONFIG_WORKER_URL = 'https://shrill-block-fafd.boleft704.workers.dev';
         
-        // Supabaseクライアントを初期化
+        // Supabaseクライアント用の変数
         let supabaseClient;
         let supabaseError = null;
-        
-        if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL' || 
-            !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
-            supabaseError = 'Supabase URLとANON KEYを設定してください';
-            console.error('⚠️ 設定エラー:', supabaseError);
-        } else {
-            try {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            } catch (error) {
-                supabaseError = error.message;
-                console.error('Supabase初期化エラー:', error);
-            }
-        }
+        let configLoaded = false;
         
         let currentUser = null;
         let postSubscription = null;
@@ -504,14 +491,56 @@
         let repostsData = {};
         let commentsData = {};
 
+        // Cloudflare Workerから認証情報を取得してSupabaseを初期化
+        async function initializeSupabase() {
+            try {
+                const response = await fetch(CONFIG_WORKER_URL);
+                
+                if (!response.ok) {
+                    throw new Error(`Worker response error: ${response.status}`);
+                }
+                
+                const config = await response.json();
+                
+                if (!config.supabaseUrl || !config.supabaseAnonKey) {
+                    throw new Error('Supabase認証情報が取得できませんでした');
+                }
+                
+                // Supabaseクライアントを初期化
+                supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+                configLoaded = true;
+                
+                console.log('✅ Supabase initialized successfully');
+                
+            } catch (error) {
+                supabaseError = error.message;
+                console.error('❌ Supabase初期化エラー:', error);
+                
+                // エラーメッセージを表示
+                if (error.message.includes('Failed to fetch') || error.message.includes('Worker response error')) {
+                    supabaseError = 'Cloudflare Workerに接続できません。CONFIG_WORKER_URLを確認してください。';
+                }
+            }
+        }
+
         async function init() {
+            // まずCloudflare Workerから認証情報を取得
+            await initializeSupabase();
+            
             if (supabaseError) {
                 showLogin();
                 document.getElementById('login-overlay').innerHTML = `
                     <div class="login-card">
                         <h1 style="color:#e74c3c;">⚠️ 設定エラー</h1>
                         <p>${supabaseError}</p>
-                        <p style="color:#666; font-size:14px;">HTMLファイルの478-479行目を編集してSUPABASE_URLとSUPABASE_ANON_KEYを設定してください。</p>
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: left;">
+                            <p style="font-weight: bold; margin-bottom: 10px;">設定手順:</p>
+                            <ol style="margin-left: 20px; color:#666; font-size:14px;">
+                                <li>Cloudflare Workerをデプロイ</li>
+                                <li>Worker設定でSUPABASE_URLとSUPABASE_ANON_KEYをSecretとして追加</li>
+                                <li>HTMLファイルの477行目のCONFIG_WORKER_URLを更新</li>
+                            </ol>
+                        </div>
                     </div>
                 `;
                 return;
@@ -577,8 +606,8 @@
         }
 
         async function handleAuth() {
-            if (supabaseError) {
-                alert('⚠️ 設定エラー\n\n' + supabaseError + '\n\nHTMLファイルの478-479行目でSUPABASE_URLとSUPABASE_ANON_KEYを設定してください。');
+            if (supabaseError || !configLoaded) {
+                alert('⚠️ 設定エラー\n\n' + (supabaseError || 'Supabaseの設定がロードされていません') + '\n\nCloudflare Workerの設定を確認してください。');
                 return;
             }
             
