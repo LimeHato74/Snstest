@@ -609,8 +609,12 @@
                     throw new Error('Invalid config received from worker');
                 }
 
-                supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
-                console.log('Supabase client initialized');
+                supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+                    auth: {
+                        redirectTo: 'https://limehato74.github.io/Snstest/'
+                    }
+                });
+                console.log('Supabase client initialized with redirect URL: https://limehato74.github.io/Snstest/');
                 
                 return true;
             } catch (error) {
@@ -778,7 +782,7 @@
                 email, 
                 password,
                 options: {
-                    emailRedirectTo: 'https://limehato74.github.io/'
+                    emailRedirectTo: 'https://limehato74.github.io/Snstest/'
                 }
             });
 
