@@ -769,17 +769,27 @@
         async function deletePost(postId) {
             if (!confirm('この投稿を削除しますか？')) return;
 
+            console.log('削除開始:', postId);
+
             const { error } = await supabaseClient
                 .from('posts')
                 .delete()
                 .eq('id', postId);
 
             if (error) {
+                console.error('削除エラー:', error);
                 showToast('削除に失敗しました', 'error');
                 return;
             }
 
-            document.getElementById(`post-${postId}`)?.remove();
+            console.log('削除成功:', postId);
+            
+            // 即座にDOMから削除（リアルタイム購読でも削除されるが、即時フィードバックのため）
+            const postElement = document.getElementById(`post-${postId}`);
+            if (postElement) {
+                postElement.remove();
+            }
+            
             showToast('投稿を削除しました', 'success');
         }
 
@@ -1044,16 +1054,28 @@
         async function deleteComment(commentId, postId) {
             if (!confirm('このコメントを削除しますか？')) return;
 
+            console.log('コメント削除開始:', commentId);
+
             const { error } = await supabaseClient
                 .from('comments')
                 .delete()
                 .eq('id', commentId);
 
             if (error) {
+                console.error('コメント削除エラー:', error);
                 showToast('削除に失敗しました', 'error');
                 return;
             }
 
+            console.log('コメント削除成功:', commentId);
+            
+            // 即座にローカルデータから削除
+            if (commentsData[postId]) {
+                commentsData[postId] = commentsData[postId].filter(c => c.id !== commentId);
+                renderComments(postId);
+                updateCommentCount(postId);
+            }
+            
             showToast('コメントを削除しました', 'success');
         }
 
@@ -1101,10 +1123,12 @@
         function subscribeToComments() {
             if (commentSubscription) return;
 
+            console.log('コメントのリアルタイム購読を開始...');
+
             commentSubscription = supabaseClient
                 .channel('comments-changes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
-                    console.log('コメントを受信:', payload.new);
+                    console.log('✅ コメント追加イベント:', payload);
                     const comment = payload.new;
                     if (!commentsData[comment.post_id]) {
                         commentsData[comment.post_id] = [];
@@ -1120,17 +1144,59 @@
                     }
                 })
                 .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'comments' }, payload => {
-                    console.log('コメント削除:', payload.old);
+                    console.log('🗑️ コメント削除イベント受信:', payload);
+                    console.log('  - payload.old:', payload.old);
+                    console.log('  - 現在のcommentsData:', JSON.parse(JSON.stringify(commentsData)));
+                    
                     const comment = payload.old;
-                    if (commentsData[comment.post_id]) {
-                        commentsData[comment.post_id] = commentsData[comment.post_id].filter(c => c.id !== comment.id);
+                    
+                    if (!comment || !comment.id) {
+                        console.error('❌ コメントIDが取得できません:', comment);
+                        return;
                     }
                     
-                    renderComments(comment.post_id);
-                    updateCommentCount(comment.post_id);
+                    console.log('  - 削除するコメントID:', comment.id);
+                    console.log('  - 削除するpost_id:', comment.post_id);
+                    
+                    // post_idが取得できない場合は、全投稿のコメントから探す
+                    if (!comment.post_id) {
+                        console.warn('⚠️ post_idが取得できないため、全投稿から検索します');
+                        let found = false;
+                        for (const postId in commentsData) {
+                            const originalLength = commentsData[postId].length;
+                            commentsData[postId] = commentsData[postId].filter(c => c.id !== comment.id);
+                            if (commentsData[postId].length < originalLength) {
+                                console.log('✅ コメントを削除しました。post_id:', postId);
+                                renderComments(postId);
+                                updateCommentCount(postId);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            console.error('❌ 削除対象のコメントが見つかりませんでした');
+                        }
+                    } else {
+                        // post_idが取得できた場合
+                        if (commentsData[comment.post_id]) {
+                            const beforeCount = commentsData[comment.post_id].length;
+                            commentsData[comment.post_id] = commentsData[comment.post_id].filter(c => c.id !== comment.id);
+                            const afterCount = commentsData[comment.post_id].length;
+                            console.log(`✅ コメント削除完了: ${beforeCount} → ${afterCount}`);
+                            renderComments(comment.post_id);
+                            updateCommentCount(comment.post_id);
+                        } else {
+                            console.warn('⚠️ post_idに対応するコメントデータが存在しません:', comment.post_id);
+                        }
+                    }
                 })
                 .subscribe((status) => {
-                    console.log('Comments subscription status:', status);
+                    console.log('📡 Comments subscription status:', status);
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ コメントのリアルタイム購読が有効になりました');
+                    } else if (status === 'CHANNEL_ERROR') {
+                        console.error('❌ コメントのリアルタイム購読でエラーが発生しました');
+                    }
                 });
         }
 
